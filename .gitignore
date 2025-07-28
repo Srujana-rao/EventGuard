@@ -1,0 +1,26 @@
+# Node.js
+node_modules/
+*.log
+npm-debug.log*
+.env
+dist/
+build/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.db
+*.sqlite3
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Visual Studio Code
+.vscode/
+
+# Uploads folder (where media is stored locally)
+event-safety-backend/uploads/

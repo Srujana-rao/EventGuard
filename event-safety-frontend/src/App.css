@@ -1,0 +1,664 @@
+/* --- CSS Variables for Professional Look --- */
+:root {
+    --color-primary: #1a73e8; /* Google Blue */
+    --color-primary-dark: #0f62fe; /* Darker blue */
+    --color-accent: #00c853; /* Green for success/highlights */
+    --color-accent-dark: #00b04e;
+    --color-danger: #d93025; /* Red for errors */
+    --color-warning: #ffb300; /* Amber for warnings/important */
+    --color-info: #2196f3; /* Light blue for info */
+
+    --color-background-light: #f8f9fa; /* Very light page background */
+    --color-surface-card: #ffffff; /* Pure white for content cards */
+    --color-border-light: #e0e0e0; /* Subtle border for elements */
+    --color-border-medium: #c0c0c0; /* Stronger border */
+
+    --color-text-dark: #212529; /* Darkest text for headings/main content */
+    --color-text-medium: #495057; /* Muted text for labels/details */
+    --color-text-light: #f8f9fa; /* White text on dark backgrounds */
+
+    --shadow-elevation-1: 0px 2px 4px rgba(0, 0, 0, 0.04), 0px 4px 8px rgba(0, 0, 0, 0.06);
+    --shadow-elevation-2: 0px 4px 8px rgba(0, 0, 0, 0.08), 0px 8px 16px rgba(0, 0, 0, 0.1);
+    
+    --spacing-xs: 0.5rem; /* 8px */
+    --spacing-sm: 1rem;   /* 16px */
+    --spacing-md: 1.5rem; /* 24px */
+    --spacing-lg: 2rem;   /* 32px */
+    --spacing-xl: 3rem;   /* 48px */
+
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+}
+
+/* General Body and Root Styling */
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: var(--spacing-lg);
+    background-color: var(--color-background-light);
+    font-family: 'Roboto', sans-serif; /* Use the imported Google Font */
+    color: var(--color-text-dark);
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+/* Main App Container */
+.App {
+    background-color: var(--color-surface-card);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-elevation-2);
+    padding: var(--spacing-xl);
+    max-width: 1200px; /* Wider for more content */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+/* Header Styling */
+.App-header {
+    background-color: var(--color-primary); /* Solid blue header */
+    padding: var(--spacing-lg) var(--spacing-xl);
+    color: var(--color-text-light);
+    border-radius: var(--border-radius-md);
+    text-align: center;
+    box-shadow: var(--shadow-elevation-1);
+    display: flex; /* Use flexbox for layout */
+    flex-direction: column;
+    align-items: center;
+    position: relative; /* For user-info positioning */
+}
+
+.App-header h1 {
+    margin-top: 0;
+    margin-bottom: var(--spacing-xs);
+    font-size: 2.8em;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+}
+
+.App-header p {
+    font-size: 1.1em;
+    opacity: 0.9;
+    font-weight: 300;
+    margin-bottom: var(--spacing-sm);
+}
+
+/* User Info in Header */
+.user-info {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.9em;
+    font-weight: 400;
+    color: var(--color-text-light);
+    background-color: rgba(0, 0, 0, 0.15); /* Slightly transparent background */
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+}
+
+.logout-button {
+    background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--color-text-light);
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85em;
+    font-weight: 500;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.logout-button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-color: var(--color-text-light);
+}
+
+/* Main Navigation */
+.main-nav {
+    margin-top: var(--spacing-sm);
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+}
+
+.nav-link {
+    color: var(--color-text-light);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1.05em;
+    padding: 0.5rem var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Section Card Styling */
+.section-card {
+    background-color: var(--color-surface-card);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-elevation-1);
+    text-align: left;
+}
+
+.section-card h2 {
+    color: var(--color-primary);
+    margin-top: 0;
+    margin-bottom: var(--spacing-md);
+    font-size: 1.6em;
+    font-weight: 600;
+    border-bottom: 1px solid var(--color-border-light);
+    padding-bottom: 0.5em;
+}
+
+/* Form and Input Styling */
+.form-group {
+    margin-bottom: var(--spacing-sm);
+}
+
+form label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+    color: var(--color-text-medium);
+    font-size: 0.9em;
+}
+
+form input[type="text"],
+form input[type="email"],
+form input[type="password"],
+form input[type="file"],
+.role-select { /* Apply to role select as well */
+    padding: 0.75rem var(--spacing-sm);
+    width: 100%;
+    max-width: 450px; /* Slightly wider max-width for inputs */
+    border: 1px solid var(--color-border-medium);
+    border-radius: var(--border-radius-sm);
+    font-size: 1em;
+    color: var(--color-text-dark);
+    background-color: var(--color-background-light);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+form input[type="file"] {
+    padding: 0.5rem var(--spacing-sm); /* File input might need less vertical padding */
+}
+
+form input[type="text"]:focus,
+form input[type="email"]:focus,
+form input[type="password"]:focus,
+form input[type="file"]:focus,
+.role-select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+    outline: none;
+}
+
+/* Common Button Styles */
+.button-base {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    margin-top: var(--spacing-sm);
+    display: inline-block; /* Allows width control */
+    text-align: center;
+    white-space: nowrap; /* Prevent text wrapping */
+}
+
+.button-primary {
+    composes: button-base;
+    background-color: var(--color-primary);
+    color: var(--color-text-light);
+    border: 1px solid var(--color-primary);
+}
+
+.button-primary:hover {
+    background-color: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    box-shadow: var(--shadow-elevation-1);
+}
+
+.button-accent {
+    composes: button-base;
+    background-color: var(--color-accent);
+    color: var(--color-text-light);
+    border: 1px solid var(--color-accent);
+}
+
+.button-accent:hover {
+    background-color: var(--color-accent-dark);
+    border-color: var(--color-accent-dark);
+    box-shadow: var(--shadow-elevation-1);
+}
+
+button:disabled {
+    background-color: var(--color-border-medium);
+    border-color: var(--color-border-medium);
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
+    color: var(--color-text-medium);
+}
+
+/* Apply specific button classes in App.jsx */
+/* Example: <button type="submit" className="button-primary">Add Incident</button> */
+
+/* List Styling (Incidents & Detections) */
+ul {
+    list-style: none;
+    padding: 0;
+    margin-top: var(--spacing-md);
+}
+
+li {
+    background-color: var(--color-background-light); /* Lighter background for list items */
+    border: 1px solid var(--color-border-light);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
+    border-radius: var(--border-radius-sm);
+    text-align: left;
+    color: var(--color-text-dark);
+    line-height: 1.5;
+    font-size: 0.95em;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+li:hover {
+    background-color: #f0f0f0; /* Subtle hover effect */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+li strong {
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+/* Error and Success Messages */
+.error-message {
+    color: var(--color-danger);
+    background-color: #fce8e6;
+    border: 1px solid var(--color-danger);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    margin-top: var(--spacing-sm);
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.success-message {
+    color: var(--color-accent-dark);
+    background-color: #e6ffed;
+    border: 1px solid var(--color-accent);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    margin-top: var(--spacing-sm);
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+/* --- AI Image Analysis Section Specific Styles --- */
+.image-analysis-container {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background-color: var(--color-background-light);
+    border: 1px dashed var(--color-border-medium);
+    border-radius: var(--border-radius-md);
+    text-align: center;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.image-analysis-container h3 {
+    color: var(--color-text-medium);
+    font-size: 1.1em;
+    margin-top: 0;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 500;
+}
+
+.image-canvas {
+    border: 2px solid var(--color-primary);
+    display: block;
+    margin: var(--spacing-sm) auto;
+    max-width: 100%;
+    height: auto;
+    box-shadow: var(--shadow-elevation-1);
+}
+
+.detections-list {
+    margin-top: var(--spacing-md);
+    text-align: left;
+    color: var(--color-text-dark);
+    background-color: #e3f2fd; /* Light blue */
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    border: 1px solid #bbdefb;
+    font-size: 0.9em;
+}
+
+.detections-list h4 {
+    margin-bottom: var(--spacing-sm);
+    color: var(--color-primary);
+    font-size: 1em;
+    font-weight: 600;
+}
+
+/* --- Authentication Specific Styles --- */
+.auth-container {
+    max-width: 450px; /* Slightly narrower */
+    margin: var(--spacing-xl) auto;
+    padding: var(--spacing-xl);
+    text-align: center;
+    background-color: var(--color-surface-card);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-elevation-2);
+    border: 1px solid var(--color-border-light);
+}
+
+.auth-container h2 {
+    font-size: 2em;
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+.auth-container button {
+    composes: button-primary; /* Use shared button style */
+    width: 100%;
+    max-width: none;
+}
+
+.auth-switch-text {
+    margin-top: var(--spacing-md);
+    color: var(--color-text-medium);
+    font-size: 0.9em;
+}
+
+.auth-link {
+    color: var(--color-primary);
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.auth-link:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+}
+
+/* Head Dashboard Styles */
+.head-dashboard h3 {
+    color: var(--color-primary);
+    font-size: 1.4em;
+    margin-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border-light);
+    padding-bottom: var(--spacing-xs);
+    font-weight: 500;
+}
+
+.pending-user-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    background-color: var(--color-background-light);
+    border: 1px solid var(--color-border-light);
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    border-radius: var(--border-radius-base);
+    box-shadow: var(--shadow-elevation-1);
+    font-size: 0.9em;
+}
+
+@media (min-width: 768px) { /* Adjust for larger screens */
+    .pending-user-item {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+    form input[type="text"],
+    form input[type="email"],
+    form input[type="password"],
+    form input[type="file"],
+    .role-select {
+        width: auto; /* Auto width on larger screens */
+        flex-grow: 1; /* Allow inputs to grow */
+    }
+}
+
+.user-details {
+    flex-grow: 1;
+    color: var(--color-text-dark);
+}
+
+.user-details strong {
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.user-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    align-items: flex-end;
+}
+
+@media (min-width: 768px) {
+    .user-actions {
+        flex-direction: row;
+        align-items: center;
+    }
+    .user-actions label {
+        margin-bottom: 0; /* Align label horizontally */
+        margin-right: var(--spacing-xs);
+    }
+}
+
+.role-select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border-medium);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9em;
+    background-color: var(--color-background-light);
+    color: var(--color-text-dark);
+    cursor: pointer;
+}
+
+.user-actions .button-accent { /* Apply the accent button style for approve */
+    composes: button-accent;
+    padding: 0.6rem 1rem;
+    font-size: 0.85em;
+    margin-top: 0;
+}
+
+/* Small screen adjustments */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    .App {
+        padding: var(--spacing-md);
+        gap: var(--spacing-md);
+    }
+    .App-header h1 {
+        font-size: 2.2em;
+    }
+    .section-card {
+        padding: var(--spacing-md);
+    }
+    .App-header {
+        padding: var(--spacing-md) var(--spacing-md);
+    }
+    .user-info {
+        position: static; /* Stack user info on small screens */
+        margin-top: var(--spacing-sm);
+        width: 100%;
+        justify-content: center;
+        background-color: transparent;
+        padding: 0;
+        border-radius: 0;
+    }
+    .main-nav {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+        align-items: center;
+    }
+    .nav-link {
+        width: 90%;
+        text-align: center;
+    }
+}
+
+/* --- Send Alert Form Styles --- */
+.send-alert-form {
+    margin-top: var(--spacing-sm);
+}
+
+.send-alert-form .form-group {
+    margin-bottom: var(--spacing-sm);
+}
+
+.send-alert-form input[type="text"],
+.send-alert-form .role-select { /* Also style select box */
+    max-width: none; /* Allow it to take full width of section */
+}
+
+.send-alert-form button {
+    width: auto; /* Allow button to size to content */
+    max-width: none;
+}
+
+/* --- Alert Media Display --- */
+.alert-media {
+    margin-top: var(--spacing-sm);
+    text-align: center;
+    background-color: var(--color-background-light);
+    padding: 10px;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--color-border-light);
+}
+
+.alert-media img,
+.alert-media video,
+.alert-media audio {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: var(--border-radius-sm);
+}
+
+.alert-media p {
+    margin-top: var(--spacing-xs);
+    font-size: 0.9em;
+}
+.alert-media a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+.alert-media a:hover {
+    text-decoration: underline;
+}
+
+/* New style for alert target badge */
+.alert-target-badge {
+    display: inline-block;
+    background-color: var(--color-primary); /* Use primary color */
+    color: var(--color-text-light); /* White text */
+    padding: 2px 8px;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.8em;
+    font-weight: 600;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+/* --- Alert Priority Badges --- */
+.alert-priority-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.8em;
+    font-weight: 600;
+    margin-left: 10px;
+    vertical-align: middle;
+    color: var(--color-text-light);
+}
+
+.alert-priority-urgent {
+    background-color: var(--color-danger);
+}
+
+.alert-priority-important {
+    background-color: var(--color-warning);
+}
+
+.alert-priority-info {
+    background-color: var(--color-info);
+}
+
+/* --- Incident Media Display --- */
+.incident-image {
+    margin-top: var(--spacing-sm);
+    text-align: center;
+    background-color: var(--color-background-light);
+    padding: 8px;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--color-border-light);
+}
+
+.incident-image img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: var(--border-radius-sm);
+}
+
+.incident-image p {
+    margin-top: var(--spacing-xs);
+    font-size: 0.85em;
+}
+.incident-image a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+.incident-image a:hover {
+    text-decoration: underline;
+}
+/* Style for incident list item's delete button */
+.incident-list-item { /* New class added to LI in App.jsx */
+    position: relative; /* For delete button positioning if needed, or other layout */
+    padding-right: 120px; /* Make space for button, adjust if button larger */
+}
+
+.delete-incident-button {
+    position: absolute;
+    right: 15px; /* Adjust as needed */
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0.5rem 1rem;
+    font-size: 0.85em;
+    margin-top: 0; /* Override default button margin-top */
+}
