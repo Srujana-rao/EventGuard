@@ -7,6 +7,7 @@ import Signup from './components/Signup';
 import Login from './components/Login';
 import HeadDashboard from './components/HeadDashboard'; // Head Dashboard Component
 
+
 // Socket.IO client instance
 // autoConnect: false prevents connection until we explicitly call socket.connect() after authentication
 const socket = io('http://localhost:5000', {
@@ -385,9 +386,10 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
         <h1>EventGuard Safety Dashboard</h1>
         <p>Backend Status: {backendMessage}</p>
         <div className="user-info">
-            <span>Welcome, {username} ({userRole})</span>
-            <button onClick={handleLogout} className="logout-button">Logout</button>
-        </div>
+    <span>Welcome, {username} ({userRole})</span>
+    
+    <button onClick={handleLogout} className="logout-button">Logout</button>
+</div>
         <nav className="main-nav">
             <Link to="/" className="nav-link">Main Dashboard</Link>
             {userRole === 'head' && (
