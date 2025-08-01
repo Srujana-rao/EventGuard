@@ -30,6 +30,13 @@ const UserSchema = new mongoose.Schema({
     assignedLocation: { // Optional: for ground staff assignment
         type: String,
         default: ''
+    },
+    // Add these two fields here inside schema:
+    resetPasswordToken: { 
+        type: String 
+    },
+    resetPasswordExpires: { 
+        type: Date 
     }
 }, { timestamps: true }); // Adds createdAt and updatedAt fields
 

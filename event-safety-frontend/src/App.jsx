@@ -6,6 +6,9 @@ import './App.css'; // Main CSS
 import Signup from './components/Signup';
 import Login from './components/Login';
 import HeadDashboard from './components/HeadDashboard'; // Head Dashboard Component
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
+
 
 
 // Socket.IO client instance
@@ -651,6 +654,9 @@ function App() {
       <Routes>
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login setAuth={handleSetAuth} />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/reset-password/:token" element={<ResetPassword />} />
+
 
         <Route
           path="/*"

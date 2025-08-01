@@ -19,7 +19,9 @@ const AuthBox = styled(Box)(({ theme }) => ({
   border: `1px solid ${theme.palette.grey[200]}`,
 }));
 
-const AuthLink = styled((props) => <Typography component="span" {...props} />)(({ theme }) => ({
+const AuthLink = styled((props) => (
+  <Typography component="span" {...props} />
+))(({ theme }) => ({
   color: theme.palette.primary.main,
   cursor: 'pointer',
   fontWeight: 500,
@@ -91,27 +93,39 @@ const Signup = () => {
       </Typography>
 
       <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 4 }}>
-        <IconButton aria-label="Signup with Google" onClick={() => handleSocialLogin('Google')}
+<IconButton
+          aria-label="Login with Google"
+          onClick={() => handleSocialLogin('Google')}
           sx={{
             border: '1px solid #ccc',
             borderRadius: '50%',
             padding: '12px',
+            backgroundColor: '#fff',
+            transition: 'border-color 0.2s, background 0.2s',
             '&:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.04)',
-              borderColor: theme => theme.palette.primary.main,
-            }
+              backgroundColor: 'rgba(0,0,0,0.05)',
+              borderColor: (theme) => theme.palette.primary.main,
+            },
           }}
         >
-          <GoogleIcon sx={{ fontSize: 30, color: 'info.main' }} />
+          <img
+            src="src/assets/google-logo.svg" // Replace with your actual image path
+            alt="Google"
+            style={{ width: 30, height: 30, display: 'block', margin: 'auto' }}
+          />
         </IconButton>
-        <IconButton aria-label="Signup with Facebook" onClick={() => handleSocialLogin('Facebook')}
+        <IconButton
+          aria-label="Signup with Facebook"
+          onClick={() => handleSocialLogin('Facebook')}
           sx={{
             border: '1px solid #ccc',
             borderRadius: '50%',
             padding: '12px',
+            backgroundColor: '#fff',
+            transition: 'border-color 0.2s, background 0.2s',
             '&:hover': {
               backgroundColor: 'rgba(0, 0, 0, 0.04)',
-              borderColor: theme => theme.palette.primary.main,
+              borderColor: (theme) => theme.palette.primary.main,
             }
           }}
         >
@@ -134,8 +148,22 @@ const Signup = () => {
           value={username}
           onChange={onChange}
           required
-          variant="outlined"
-          sx={{ '.MuiOutlinedInput-notchedOutline': { borderColor: 'var(--color-border-medium)' } }}
+          variant="standard"
+          InputLabelProps={{ shrink: true }}
+          placeholder="Username"
+          sx={{
+            '& .MuiInput-underline:before': {
+              borderBottomColor: 'var(--color-border-medium)',
+              transition: 'border-bottom-color 0.3s',
+            },
+            '&:hover .MuiInput-underline:before': {
+              borderBottomColor: (theme) => theme.palette.primary.light,
+            },
+            '& .MuiInput-underline:after': {
+              borderBottomColor: (theme) => theme.palette.primary.main,
+              borderBottomWidth: 2,
+            },
+          }}
         />
         <TextField
           fullWidth
@@ -147,8 +175,22 @@ const Signup = () => {
           value={email}
           onChange={onChange}
           required
-          variant="outlined"
-          sx={{ '.MuiOutlinedInput-notchedOutline': { borderColor: 'var(--color-border-medium)' } }}
+          variant="standard"
+          InputLabelProps={{ shrink: true }}
+          placeholder="Email"
+          sx={{
+            '& .MuiInput-underline:before': {
+              borderBottomColor: 'var(--color-border-medium)',
+              transition: 'border-bottom-color 0.3s',
+            },
+            '&:hover .MuiInput-underline:before': {
+              borderBottomColor: (theme) => theme.palette.primary.light,
+            },
+            '& .MuiInput-underline:after': {
+              borderBottomColor: (theme) => theme.palette.primary.main,
+              borderBottomWidth: 2,
+            },
+          }}
         />
         <TextField
           fullWidth
@@ -160,9 +202,23 @@ const Signup = () => {
           value={password}
           onChange={onChange}
           required
-          minLength="6"
-          variant="outlined"
-          sx={{ '.MuiOutlinedInput-notchedOutline': { borderColor: 'var(--color-border-medium)' } }}
+          minLength={6}
+          variant="standard"
+          InputLabelProps={{ shrink: true }}
+          placeholder="Password"
+          sx={{
+            '& .MuiInput-underline:before': {
+              borderBottomColor: 'var(--color-border-medium)',
+              transition: 'border-bottom-color 0.3s',
+            },
+            '&:hover .MuiInput-underline:before': {
+              borderBottomColor: (theme) => theme.palette.primary.light,
+            },
+            '& .MuiInput-underline:after': {
+              borderBottomColor: (theme) => theme.palette.primary.main,
+              borderBottomWidth: 2,
+            },
+          }}
         />
         <TextField
           fullWidth
@@ -174,9 +230,23 @@ const Signup = () => {
           value={password2}
           onChange={onChange}
           required
-          minLength="6"
-          variant="outlined"
-          sx={{ '.MuiOutlinedInput-notchedOutline': { borderColor: 'var(--color-border-medium)' } }}
+          minLength={6}
+          variant="standard"
+          InputLabelProps={{ shrink: true }}
+          placeholder="Confirm Password"
+          sx={{
+            '& .MuiInput-underline:before': {
+              borderBottomColor: 'var(--color-border-medium)',
+              transition: 'border-bottom-color 0.3s',
+            },
+            '&:hover .MuiInput-underline:before': {
+              borderBottomColor: (theme) => theme.palette.primary.light,
+            },
+            '& .MuiInput-underline:after': {
+              borderBottomColor: (theme) => theme.palette.primary.main,
+              borderBottomWidth: 2,
+            },
+          }}
         />
         <Button
           type="submit"
@@ -199,7 +269,7 @@ const Signup = () => {
             border: '1px solid',
             borderColor: 'secondary.main',
             borderRadius: 1,
-            bgcolor: 'secondary.lightest'
+            bgcolor: 'secondary.lightest',
           }}
         >
           {message}
@@ -216,7 +286,7 @@ const Signup = () => {
             border: '1px solid',
             borderColor: 'error.main',
             borderRadius: 1,
-            bgcolor: 'error.lightest'
+            bgcolor: 'error.lightest',
           }}
         >
           {error}
