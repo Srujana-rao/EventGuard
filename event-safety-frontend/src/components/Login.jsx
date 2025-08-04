@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { TextField, Button, Box, Typography, IconButton, Divider, Stack } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import FacebookIcon from '@mui/icons-material/Facebook';
+import { socket } from '../socket'; // Adjust the import path for your singleton
 
 const AuthBox = styled(Box)(({ theme }) => ({
   maxWidth: 450,
@@ -61,6 +62,13 @@ const Login = ({ setAuth }) => {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       setAuth(true);
+
+      // Delay socket connection slightly to allow state update
+      setTimeout(() => {
+  socket.auth = { token: res.data.token };
+  if (!socket.connected) socket.connect();
+}, 50);
+
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.msg || 'Login failed. Please check credentials or approval status.');
@@ -70,7 +78,10 @@ const Login = ({ setAuth }) => {
   };
 
   const handleSocialLogin = (provider) => {
-    alert(`Initiating login with ${provider}... (Backend integration not yet implemented)`);
+    if (provider === 'Google') {
+      window.location.href = 'http://localhost:5000/api/auth/google';
+    }
+    // Add other providers if you need
   };
 
   return (
@@ -83,7 +94,6 @@ const Login = ({ setAuth }) => {
       </Typography>
 
       <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 4 }}>
-        {/* Google IconButton using logo image */}
         <IconButton
           aria-label="Login with Google"
           onClick={() => handleSocialLogin('Google')}
@@ -101,13 +111,12 @@ const Login = ({ setAuth }) => {
           disabled={loading}
         >
           <img
-            src="src/assets/google-logo.svg" // Replace with your actual image path
+            src="src/assets/google-logo.svg" // Update the path accordingly
             alt="Google"
             style={{ width: 30, height: 30, display: 'block', margin: 'auto' }}
           />
         </IconButton>
 
-        {/* Facebook IconButton */}
         <IconButton
           aria-label="Login with Facebook"
           onClick={() => handleSocialLogin('Facebook')}
@@ -230,7 +239,7 @@ const Login = ({ setAuth }) => {
       </Typography>
 
       <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
-        Don&apos;t have an account?{' '}
+        Don't have an account?{' '}
         <AuthLink onClick={() => navigate('/signup')} component="span">
           Sign up
         </AuthLink>

@@ -8,6 +8,8 @@ import Login from './components/Login';
 import HeadDashboard from './components/HeadDashboard'; // Head Dashboard Component
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
+import SocialSuccess from './components/SocialSuccess';
+
 
 
 
@@ -61,25 +63,26 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
 
   // --- Socket.IO Authentication & Event Listeners ---
   useEffect(() => {
-    // Authenticate socket after successful login or on page load if token exists
-    if (isAuthenticated && localStorage.getItem('token')) {
-      socket.auth = { token: localStorage.getItem('token') }; // Attach JWT token to socket's auth payload
+  const token = localStorage.getItem('token');
+
+  if (isAuthenticated && token) {
+    socket.auth = { token };
+    setTimeout(() => {
       if (!socket.connected) {
         console.log('Socket not connected, attempting to connect...');
-        socket.connect(); // Connect the socket if not already connected
+        socket.connect();
       } else {
-        // If already connected, re-emit authentication for robustness (e.g. if token changed)
-        socket.emit('authenticate', localStorage.getItem('token')); 
+        socket.emit('authenticate', token);
       }
+    }, 50); // 50ms delay to let React state settle
+  } else {
+    if (socket.connected) {
+      console.log('User not authenticated, disconnecting socket...');
+      socket.disconnect();
     } else {
-        // If not authenticated (e.g., logged out), disconnect the socket
-        if (socket.connected) {
-            console.log('User not authenticated, disconnecting socket...');
-            socket.disconnect();
-        } else {
-            console.log('User not authenticated and socket already disconnected/not connected.');
-        }
+      console.log('User not authenticated and socket already disconnected/not connected.');
     }
+  }
 
     // Socket.IO event listeners
     socket.on('connect', () => {
@@ -656,6 +659,8 @@ function App() {
         <Route path="/login" element={<Login setAuth={handleSetAuth} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 <Route path="/reset-password/:token" element={<ResetPassword />} />
+<Route path="/social-success" element={<SocialSuccess setAuth={handleSetAuth} />} />
+
 
 
         <Route

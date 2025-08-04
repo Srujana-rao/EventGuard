@@ -54,6 +54,19 @@ app.use(express.json()); // Enable JSON body parsing for incoming requests
 // Makes files in 'uploads' accessible via /uploads URL from the frontend
 app.use('/uploads', express.static('uploads'));
 // -----------------------------------------------------------
+const session = require('express-session');
+const passport = require('./passport'); // adjust path if passport.js is located elsewhere
+
+// Add Express session middleware; place this before route handlers
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-session-secret-key', // better to use .env variable
+  resave: false,
+  saveUninitialized: false,
+}));
+
+// Initialize Passport and use session middleware
+app.use(passport.initialize());
+app.use(passport.session());
 
 // MongoDB Connection
 const mongoURI = process.env.MONGO_URI;
