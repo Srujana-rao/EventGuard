@@ -92,11 +92,11 @@ const HeadDashboard = ({ userRole }) => {
 
     return (
         <div className="head-dashboard section-card">
-            <h2>Team Head Dashboard: User Management</h2>
+            <h2>Team Head User Approval Dashboard</h2>
             {message && <p className="success-message">{message}</p>}
             {error && <p className="error-message">{error}</p>}
 
-            <h3>Pending Registrations ({pendingUsers.length})</h3>
+            <h3>Pending Approvals ({pendingUsers.length})</h3>
             {pendingUsers.length === 0 ? (
                 <p>No pending users to approve.</p>
             ) : (
