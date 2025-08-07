@@ -442,7 +442,10 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/social-success" element={<SocialSuccess setAuth={handleSetAuth} />} />
-
+<Route
+  path="/head-dashboard"
+  element={userRole === 'head' ? <HeadDashboard userRole={userRole} /> : <Navigate to="/login" />}
+  />
         <Route
           path="/*"
           element={
@@ -453,6 +456,7 @@ function App() {
                 username={username}
                 handleSetAuth={handleSetAuth}
               />
+              
             ) : (
               <Navigate to="/login" />
             )
