@@ -177,7 +177,7 @@ export default function LandingPage() {
                 fontSize: isMobile ? '2rem' : '2.8rem',
                 lineHeight: 1.2,
                 textAlign: 'left',
-                marginLeft: 3
+                marginLeft: 3,
               }}
             >
               Secure Your Events with
@@ -204,7 +204,7 @@ export default function LandingPage() {
                 fontWeight: 400,
                 lineHeight: 1.6,
                 textAlign: 'left',
-                marginLeft: 3
+                marginLeft: 3,
               }}
             >
               The ultimate event security platform that combines AI-powered
@@ -222,7 +222,6 @@ export default function LandingPage() {
                   px: 3,
                   fontSize: '1rem',
                   fontWeight: 600,
-                  
                   background:
                     'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
                   color: '#333',
@@ -232,7 +231,7 @@ export default function LandingPage() {
                     transform: 'translateY(-2px)',
                   },
                   transition: 'all 0.3s ease',
-                  marginLeft: 3
+                  marginLeft: 3,
                 }}
               >
                 Get Started
@@ -240,7 +239,6 @@ export default function LandingPage() {
             </Box>
           </Box>
 
-          {/* Bigger Purple Floating Component */}
           <Box
             sx={{
               position: 'absolute',
@@ -261,7 +259,73 @@ export default function LandingPage() {
               zIndex: 2,
             }}
           >
+            {/* Main Shield Icon */}
             <Security sx={{ fontSize: 90, color: 'rgba(255, 255, 255, 0.9)' }} />
+
+            {/* Floating Elements */}
+            {/* Top right: Notifications */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '16%',
+                right: '8%',
+                width: '58px',
+                height: '58px',
+                borderRadius: '50%',
+                background:
+                  'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                animation: 'float 4s ease-in-out infinite',
+                boxShadow: '0 6px 18px rgba(255, 215, 0, 0.15)',
+              }}
+            >
+              <NotificationsActive sx={{ fontSize: 40, color: '#ffd700' }} />
+            </Box>
+
+            {/* Bottom left: Group */}
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: '13%',
+                left: '10%',
+                width: '45px',
+                height: '45px',
+                borderRadius: '50%',
+                background:
+                  'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                animation: 'float 4s ease-in-out infinite 2s',
+                boxShadow: '0 5px 15px rgba(255, 255, 255, 0.12)',
+              }}
+            >
+              <Group sx={{ fontSize: 28, color: 'white' }} />
+            </Box>
+
+            {/* Center pulse: Shield */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '65px',
+                height: '65px',
+                borderRadius: '50%',
+                background:
+                  'linear-gradient(135deg, rgba(102, 126, 234, 0.32) 0%, rgba(118, 75, 162, 0.18) 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                animation: 'pulse 3s ease-in-out infinite',
+                boxShadow: '0 4px 18px rgba(102, 126, 234, 0.18)',
+              }}
+            >
+              <Shield sx={{ fontSize: 28, color: 'rgba(255, 255, 255, 0.85)' }} />
+            </Box>
           </Box>
         </Container>
       </Box>
@@ -286,12 +350,12 @@ export default function LandingPage() {
           <Grid container spacing={4} justifyContent="center">
             {features.map((feature, index) => (
               <Grid
-                item
-                xs={12}
-                sm={6}
-                key={index}
-                display="flex"
-                justifyContent={index === 4 ? "center" : "flex-start"}
+                  item
+                  xs={12}
+                  sm={6}
+                  key={index}
+                  display="flex"
+                  justifyContent={index === 4 ? "center" : "flex-start"}
               >
                 <Card
                   sx={{
@@ -400,6 +464,26 @@ export default function LandingPage() {
           </Typography>
         </Container>
       </Box>
+
+      {/* CSS Animations */}
+      <style>
+        {`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px);}
+            50% { transform: translateY(-16px);}
+          }
+          @keyframes pulse {
+            0%, 100% {
+              transform: translate(-50%, -50%) scale(1);
+              opacity: 0.85;
+            }
+            50% {
+              transform: translate(-50%, -50%) scale(1.09);
+              opacity: 1;
+            }
+          }
+        `}
+      </style>
     </Box>
   );
 }
