@@ -3,6 +3,7 @@ import axios from 'axios';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { io } from 'socket.io-client'; // Socket.IO client import
 import './App.css'; // Main CSS
+import LandingPage from './components/LandingPage';
 import Signup from './components/Signup';
 import Login from './components/Login';
 import HeadDashboard from './components/HeadDashboard'; // Head Dashboard Component
@@ -53,6 +54,7 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
   const handleLogout = () => {
     handleSetAuth(false);
     socket.disconnect();
+    window.location.href = '/';
   };
 
   // Socket.IO Authentication & Event Listeners
@@ -437,17 +439,18 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/signup" element={<Signup setAuth={handleSetAuth} />} />
         <Route path="/login" element={<Login setAuth={handleSetAuth} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/social-success" element={<SocialSuccess setAuth={handleSetAuth} />} />
-<Route
-  path="/head-dashboard"
-  element={userRole === 'head' ? <HeadDashboard userRole={userRole} /> : <Navigate to="/login" />}
-  />
         <Route
-          path="/*"
+          path="/head-dashboard"
+          element={userRole === 'head' ? <HeadDashboard userRole={userRole} /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/dashboard"
           element={
             isAuthenticated ? (
               <AppContent
@@ -456,11 +459,14 @@ function App() {
                 username={username}
                 handleSetAuth={handleSetAuth}
               />
-              
             ) : (
-              <Navigate to="/login" />
+              <Navigate to="/" />
             )
           }
+        />
+        <Route
+          path="/*"
+          element={<Navigate to="/" />}
         />
       </Routes>
     </Router>

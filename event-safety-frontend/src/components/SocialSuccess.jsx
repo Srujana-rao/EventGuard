@@ -28,7 +28,7 @@ export default function SocialSuccess({ setAuth }) {
           }
           // -------------------------------------------------------
 
-          navigate('/');
+          navigate('/dashboard');
         })
         .catch(() => {
           localStorage.removeItem('token');
