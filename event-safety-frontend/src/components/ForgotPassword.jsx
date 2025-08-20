@@ -54,6 +54,7 @@ export default function ForgotPassword() {
         justifyContent: 'center',
         py: 4,
         px: 2,
+        borderRadius: 5
       }}
     >
       <Container maxWidth="sm">
