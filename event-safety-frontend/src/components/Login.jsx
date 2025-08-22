@@ -277,13 +277,7 @@ export default function Login({ setAuth }) {
   }}
   sx={{
     mb: 2,
-    '& .MuiOutlinedInput-root': {
-      borderRadius: 2,
-      backgroundColor: 'white',
-      '&:hover .MuiOutlinedInput-notchedOutline': {
-        borderColor: '#667eea',
-      },
-    },
+    
     '& .MuiInputLabel-root': {
       color: '#666',
       '&.Mui-focused': {
@@ -334,13 +328,7 @@ export default function Login({ setAuth }) {
                 }}
                 sx={{
                   mb: 3,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    backgroundColor: 'white',
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#667eea',
-                    },
-                  },
+                
                   '& .MuiInputLabel-root': {
                     color: '#666',
                     '&.Mui-focused': {
@@ -351,10 +339,7 @@ export default function Login({ setAuth }) {
                     borderColor: '#e0e0e0',
                     borderWidth: '1px',
                   },
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#667eea',
-                    borderWidth: '2px',
-                  },
+                  
                 }}
               />
 
