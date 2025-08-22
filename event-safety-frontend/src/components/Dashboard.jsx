@@ -171,6 +171,9 @@ function SidebarMenu({
             letterSpacing: 0.5,
             mb: 5,
             userSelect: 'none',
+            background: 'linear-gradient(90deg, #f7b733, #fc4a1a)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
           }}
         >
           EventGuard
@@ -825,6 +828,7 @@ export default function Dashboard({
               fontWeight: 500,
               letterSpacing: 0.5,
               minWidth: 180,
+              
               textAlign: 'center',
               flexGrow: 1,
             }}
