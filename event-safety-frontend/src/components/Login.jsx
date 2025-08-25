@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import axios from 'axios';
 import {
   Box,
@@ -259,89 +260,71 @@ export default function Login({ setAuth }) {
 
             <Box component="form" onSubmit={handleSubmit} noValidate>
               <TextField
+  id="standard-basic"
+  label="Email Address"
+  variant="standard"
   required
   fullWidth
-  variant="outlined"
-  label="Email Address"
   type="email"
   name="email"
   value={formData.email}
   onChange={handleEmailChange}
   autoComplete="email"
-  InputProps={{
-    startAdornment: (
-      <InputAdornment position="start">
-        <Email sx={{ color: '#999', fontSize: '1.2rem' }} />
-      </InputAdornment>
-    ),
-  }}
-  sx={{
-    mb: 2,
-    
-    '& .MuiInputLabel-root': {
-      color: '#666',
-      '&.Mui-focused': {
-        color: '#667eea',
+  InputLabelProps={{
+    shrink: true,
+    sx: {
+      backgroundColor: 'white',
+      px: 0.5,
+      position: 'relative',
+      zIndex: 1,
+      // Adjust floating label position:
+      '&.MuiInputLabel-shrink': {
+        transform: 'translate(0, 20px) scale(1)', // Move label down from default
       },
-    },
-    '& .MuiOutlinedInput-notchedOutline': {
-      borderColor: '#e0e0e0',
-      borderWidth: '1px',
-    },
-    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderColor: '#667eea',
-      borderWidth: '2px',
     },
   }}
 />
 
 
-              <TextField
-                required
-                fullWidth
-                margin="normal"
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
-                onChange={handlePasswordChange}
-                autoComplete="current-password"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock sx={{ color: '#999', fontSize: '1.2rem' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                        size="small"
-                        sx={{ color: '#999' }}
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  mb: 3,
-                
-                  '& .MuiInputLabel-root': {
-                    color: '#666',
-                    '&.Mui-focused': {
-                      color: '#667eea',
-                    },
-                  },
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#e0e0e0',
-                    borderWidth: '1px',
-                  },
-                  
-                }}
-              />
+
+
+<TextField
+  id="standard-password"
+  label="Password"
+  variant="standard"
+  required
+  fullWidth
+  type={showPassword ? 'text' : 'password'}
+  name="password"
+  value={formData.password}
+  onChange={handlePasswordChange}
+  autoComplete="current-password"
+  InputLabelProps={{
+    shrink: true,
+    sx: {
+      backgroundColor: 'white',
+      px: 0.5,
+      position: 'relative',
+      zIndex: 1,
+      '&.MuiInputLabel-shrink': {
+        transform: 'translate(0, 20px) scale(1)',
+      },
+    },
+  }}
+  InputProps={{
+    endAdornment: (
+      <InputAdornment position="end">
+        <IconButton
+          aria-label="toggle password visibility"
+          onClick={() => setShowPassword((show) => !show)}
+          edge="end"
+        >
+          {showPassword ? <VisibilityOff /> : <Visibility />}
+        </IconButton>
+      </InputAdornment>
+    ),
+  }}
+/>
 
               <Box
                 sx={{

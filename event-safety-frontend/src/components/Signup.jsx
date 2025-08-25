@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Stack from '@mui/material/Stack';
 import axios from 'axios';
 import {
   Box,
@@ -290,205 +291,137 @@ export default function Signup({ setAuth }) {
             {/* Signup Form */}
             <Box component="form" onSubmit={handleSubmit} noValidate>
               {/* Username */}
-              <TextField
-                required
-                fullWidth
-                margin="normal"
-                label="Username"
-                name="username"
-                value={formData.username}
-                onChange={handleUsernameChange}
-                autoComplete="username"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Person sx={{ color: '#999', fontSize: '1.2rem' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  mb: 2,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    backgroundColor: 'white',
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#667eea',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: '#666',
-                    '&.Mui-focused': {
-                      color: '#667eea',
-                    },
-                  },
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#e0e0e0',
-                    borderWidth: '1px',
-                  },
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#667eea',
-                    borderWidth: '2px',
-                  },
-                }}
-              />
+              {/* Username */}
 
-              {/* Email */}
-              <TextField
-                required
-                fullWidth
-                margin="normal"
-                label="Email Address"
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleEmailChange}
-                autoComplete="email"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Email sx={{ color: '#999', fontSize: '1.2rem' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  mb: 2,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    backgroundColor: 'white',
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#667eea',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: '#666',
-                    '&.Mui-focused': {
-                      color: '#667eea',
-                    },
-                  },
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#e0e0e0',
-                    borderWidth: '1px',
-                  },
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#667eea',
-                    borderWidth: '2px',
-                  },
-                }}
-              />
 
-              {/* Password */}
-              <TextField
-                required
-                fullWidth
-                margin="normal"
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
-                onChange={handlePasswordChange}
-                autoComplete="new-password"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock sx={{ color: '#999', fontSize: '1.2rem' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                        size="small"
-                        sx={{ color: '#999' }}
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  mb: 2,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    backgroundColor: 'white',
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#667eea',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: '#666',
-                    '&.Mui-focused': {
-                      color: '#667eea',
-                    },
-                  },
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#e0e0e0',
-                    borderWidth: '1px',
-                  },
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#667eea',
-                    borderWidth: '2px',
-                  },
-                }}
-              />
+<Stack spacing={0}>  {/* spacing={1} means 8px gap */}
+  <TextField
+    id="standard-username"
+    label="Username"
+    variant="standard"
+    required
+    fullWidth
+    name="username"
+    value={formData.username}
+    onChange={handleUsernameChange}
+    autoComplete="username"
+    InputLabelProps={{
+      shrink: true,
+      sx: {
+        backgroundColor: 'white',
+        px: 0.5,
+        position: 'relative',
+        zIndex: 1,
+        '&.MuiInputLabel-shrink': {
+          transform: 'translate(0, 20px) scale(1)',
+        },
+      },
+    }}
+  />
 
-              {/* Confirm Password */}
-              <TextField
-                required
-                fullWidth
-                margin="normal"
-                label="Confirm Password"
-                type={showConfirmPassword ? 'text' : 'password'}
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleConfirmPasswordChange}
-                autoComplete="new-password"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock sx={{ color: '#999', fontSize: '1.2rem' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle confirm password visibility"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        edge="end"
-                        size="small"
-                        sx={{ color: '#999' }}
-                      >
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  mb: 3,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    backgroundColor: 'white',
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#667eea',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: '#666',
-                    '&.Mui-focused': {
-                      color: '#667eea',
-                    },
-                  },
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#e0e0e0',
-                    borderWidth: '1px',
-                  },
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#667eea',
-                    borderWidth: '2px',
-                  },
-                }}
-              />
+  <TextField
+    id="standard-email"
+    label="Email Address"
+    variant="standard"
+    required
+    fullWidth
+    type="email"
+    name="email"
+    value={formData.email}
+    onChange={handleEmailChange}
+    autoComplete="email"
+    InputLabelProps={{
+      shrink: true,
+      sx: {
+        backgroundColor: 'white',
+        px: 0.5,
+        position: 'relative',
+        zIndex: 1,
+        '&.MuiInputLabel-shrink': {
+          transform: 'translate(0, 20px) scale(1)',
+        },
+      },
+    }}
+  />
+
+  <TextField
+    id="standard-password"
+    label="Password"
+    variant="standard"
+    required
+    fullWidth
+    type="password"
+    name="password"
+    value={formData.password}
+    onChange={handlePasswordChange}
+    autoComplete="new-password"
+    InputLabelProps={{
+      shrink: true,
+      sx: {
+        backgroundColor: 'white',
+        px: 0.5,
+        position: 'relative',
+        zIndex: 1,
+        '&.MuiInputLabel-shrink': {
+          transform: 'translate(0, 20px) scale(1)',
+        },
+      },
+    }}
+    InputProps={{
+        endAdornment: (
+          <InputAdornment position="end">
+            <IconButton
+              aria-label="toggle password visibility"
+              onClick={() => setShowPassword((show) => !show)}
+              edge="end"
+            >
+              {showPassword ? <VisibilityOff /> : <Visibility />}
+            </IconButton>
+          </InputAdornment>
+        ),
+      }}
+  />
+
+  <TextField
+    id="standard-confirmPassword"
+    label="Confirm Password"
+    variant="standard"
+    required
+    fullWidth
+    type="password"
+    name="confirmPassword"
+    value={formData.confirmPassword}
+    onChange={handleConfirmPasswordChange}
+    autoComplete="new-password"
+    InputLabelProps={{
+      shrink: true,
+      sx: {
+        backgroundColor: 'white',
+        px: 0.5,
+        position: 'relative',
+        zIndex: 1,
+        '&.MuiInputLabel-shrink': {
+          transform: 'translate(0, 20px) scale(1)',
+        },
+      },
+    }}
+    InputProps={{
+        endAdornment: (
+          <InputAdornment position="end">
+            <IconButton
+              aria-label="toggle password visibility"
+              onClick={() => setShowPassword((show) => !show)}
+              edge="end"
+            >
+              {showPassword ? <VisibilityOff /> : <Visibility />}
+            </IconButton>
+          </InputAdornment>
+        ),
+      }}
+  />
+</Stack>
+
+
 
               {/* Remember Me Checkbox */}
               <Box sx={{ mb: 4 }}>

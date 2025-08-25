@@ -162,7 +162,7 @@ export default function ResetPassword() {
           sx={{
             p: 5,
             borderRadius: 4,
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+           
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.2)',
             boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
@@ -226,138 +226,53 @@ export default function ResetPassword() {
 
           {/* Reset Form */}
           <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
-        <TextField
+            <TextField
+              id="standard-basic"
+              label="New Password"
+              variant="standard"
               fullWidth
-          label="New Password"
               name="password"
-              type={showPassword ? 'text' : 'password'}
+              type="password"
               value={formData.password}
               onChange={handleChange}
-          required
-              sx={{
-                mb: 3,
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  borderRadius: 3,
-                  fontSize: '1rem',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  },
-                  '&.Mui-focused': {
-                    backgroundColor: 'rgba(255, 255, 255, 1)',
-                    boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.1)',
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: 'text.secondary',
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  '&.Mui-focused': {
-                    color: '#667eea',
-                    fontWeight: 600,
-                  },
-                },
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(0, 0, 0, 0.15)',
-                  borderWidth: '2px',
-                },
-                '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#667eea',
-                },
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#667eea',
-                  borderWidth: '2px',
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Lock sx={{ color: '#667eea', fontSize: '1.5rem' }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                      sx={{ 
-                        color: 'text.secondary',
-                        '&:hover': { color: '#667eea' },
-                      }}
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-                style: { fontSize: '1rem' },
-              }}
+              required
+              InputLabelProps={{
+    shrink: true,
+    sx: {
+      backgroundColor: 'white',
+      px: 0.5,
+      position: 'relative',
+      zIndex: 1,
+      '&.MuiInputLabel-shrink': {
+        transform: 'translate(0, 20px) scale(1)',
+      },
+    },
+  }}
+ 
             />
 
-        <TextField
+            <TextField
+              id="standard-basic"
+              label="Confirm New Password"
+              variant="standard"
               fullWidth
-          label="Confirm New Password"
               name="confirmPassword"
-              type={showConfirmPassword ? 'text' : 'password'}
+              type="password"
               value={formData.confirmPassword}
               onChange={handleChange}
-          required
-              sx={{
-                mb: 4,
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  borderRadius: 3,
-                  fontSize: '1rem',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  },
-                  '&.Mui-focused': {
-                    backgroundColor: 'rgba(255, 255, 255, 1)',
-                    boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.1)',
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: 'text.secondary',
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  '&.Mui-focused': {
-                    color: '#667eea',
-                    fontWeight: 600,
-                  },
-                },
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(0, 0, 0, 0.15)',
-                  borderWidth: '2px',
-                },
-                '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#667eea',
-                },
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#667eea',
-                  borderWidth: '2px',
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Lock sx={{ color: '#667eea', fontSize: '1.5rem' }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      edge="end"
-                      sx={{ 
-                        color: 'text.secondary',
-                        '&:hover': { color: '#667eea' },
-                      }}
-                    >
-                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-                style: { fontSize: '1rem' },
-              }}
+              required
+              InputLabelProps={{
+    shrink: true,
+    sx: {
+      backgroundColor: 'white',
+      px: 0.5,
+      position: 'relative',
+      zIndex: 1,
+      '&.MuiInputLabel-shrink': {
+        transform: 'translate(0, 20px) scale(1)',
+      },
+    },
+  }}
             />
 
             {/* Reset Button */}
@@ -369,6 +284,7 @@ export default function ResetPassword() {
               sx={{
                 py: 2,
                 borderRadius: 3,
+                marginTop: 3,
                 fontSize: '1.1rem',
                 fontWeight: 700,
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',

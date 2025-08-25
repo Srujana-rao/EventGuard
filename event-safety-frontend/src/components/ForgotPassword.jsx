@@ -128,56 +128,27 @@ export default function ForgotPassword() {
           {/* Reset Form */}
           <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
             <TextField
-              fullWidth
+              id="standard-basic"
               label="Email Address"
+              variant="standard"
+              fullWidth
               name="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              sx={{
-                mb: 4,
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  borderRadius: 3,
-                  fontSize: '1rem',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  },
-                  '&.Mui-focused': {
-                    backgroundColor: 'rgba(255, 255, 255, 1)',
-                    boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.1)',
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: 'text.secondary',
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  '&.Mui-focused': {
-                    color: '#667eea',
-                    fontWeight: 600,
-                  },
-                },
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(0, 0, 0, 0.15)',
-                  borderWidth: '2px',
-                },
-                '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#667eea',
-                },
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#667eea',
-                  borderWidth: '2px',
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Email sx={{ color: '#667eea', fontSize: '1.5rem' }} />
-                  </InputAdornment>
-                ),
-                style: { fontSize: '1rem' },
-              }}
+              InputLabelProps={{
+    shrink: true,
+    sx: {
+      backgroundColor: 'white',
+      px: 0.5,
+      position: 'relative',
+      zIndex: 1,
+      '&.MuiInputLabel-shrink': {
+        transform: 'translate(0, 20px) scale(1)',
+      },
+    },
+  }}
             />
 
             {/* Reset Button */}
@@ -187,7 +158,8 @@ export default function ForgotPassword() {
               variant="contained"
               disabled={loading}
               sx={{
-                py: 2,
+                py: 1,
+                marginTop: 3,
                 borderRadius: 3,
                 fontSize: '1.1rem',
                 fontWeight: 700,
