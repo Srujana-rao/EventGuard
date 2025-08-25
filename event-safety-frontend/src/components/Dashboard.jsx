@@ -279,8 +279,8 @@ const AlertsTab = ({
         </Typography>
         <Box component="form" onSubmit={handleSendAlert} noValidate>
           <TextField
-            label="Message"
-            variant="outlined"
+            
+            variant="standard"
             fullWidth
             placeholder="Enter alert message"
             value={alertMessage}
@@ -357,8 +357,9 @@ const AlertsTab = ({
             </Select>
           </FormControl>
           <TextField
-            label="Location Tag"
-            variant="outlined"
+         
+            variant="standard"
+            required
             fullWidth
             placeholder="Enter location (optional)"
             value={alertLocationTag}
@@ -477,19 +478,33 @@ const NewIncidentTab = ({
         </Typography>
         <Box component="form" onSubmit={handleAddIncident} noValidate>
           <TextField
-            label="Incident Type"
-            variant="outlined"
-            fullWidth
-            placeholder="Enter incident type"
-            value={newIncidentType}
-            onChange={(e) => setNewIncidentType(e.target.value)}
-            sx={{ mb: 3 }}
-            required
-            inputProps={{ 'aria-label': 'Incident type' }}
-          />
+  variant="standard"
+  fullWidth
+  placeholder="Enter incident type"
+  value={newIncidentType}
+  onChange={(e) => setNewIncidentType(e.target.value)}
+  sx={{
+    mb: 3,
+    maxWidth: '100%', // prevent overflow
+    '& .MuiInputBase-root': {
+      width: '100%',
+    },
+    '& .MuiInput-underline:before': {
+      left: 0,
+      right: 0, // keeps underline inside
+    },
+    '& .MuiInput-underline:after': {
+      left: 0,
+      right: 0, // keeps focus underline inside
+    },
+  }}
+  required
+  inputProps={{ 'aria-label': 'Incident type' }}
+/>
+
+
           <TextField
-            label="Location"
-            variant="outlined"
+            variant="standard"
             fullWidth
             placeholder="Enter location"
             value={newIncidentLocation}
