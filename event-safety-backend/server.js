@@ -3,8 +3,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
-const axios = require('axios');
-const FormData = require('form-data');
 const path = require('path'); // Node.js path module, needed for file paths
 
 const authRoutes = require('./routes/auth'); // Import authentication routes
@@ -42,9 +40,7 @@ const mediaStorage = multer.diskStorage({ // Renamed from alertStorage for clari
 });
 const uploadMediaToDisk = multer({ storage: mediaStorage }); // Renamed from uploadAlertMedia
 
-// 2. For AI analysis: Memory storage (AI needs buffer directly)
-const aiAnalysisStorage = multer.memoryStorage();
-const uploadAiImage = multer({ storage: aiAnalysisStorage });
+// 2. For uploads: memory storage (kept minimal)
 // -------------------------------------------------------------------------
 
 // Middleware
@@ -78,10 +74,12 @@ mongoose.connect(mongoURI)
 // Mongoose Schema and Model for Incidents
 const incidentSchema = new mongoose.Schema({
     type: { type: String, required: true },
+    description: { type: String, default: '' },
     location: { type: String, required: true },
     timestamp: { type: Date, default: Date.now },
-    visionLabels: { type: Array, default: [] }, // Will store labels from Python AI later
-    imageUrl: { type: String } // To store the URL of the uploaded image for incidents
+    visionLabels: { type: Array, default: [] },
+    imageUrl: { type: String }, // To store the URL of the uploaded image for incidents
+    // (Removed AI-generated fields: severity, actions)
 }, { timestamps: true });
 const Incident = mongoose.model('Incident', incidentSchema);
 
@@ -133,6 +131,7 @@ io.on('connection', (socket) => {
 
             // Add socket to appropriate role set
             connectedUsersByRole[user.role].add(socket.id);
+            socket.join(user.role);
             console.log(`User ${user.username} (${user.role}) authenticated via Socket.IO. Current connections:`, {
                 head: connectedUsersByRole.head.size,
                 room: connectedUsersByRole.room.size,
@@ -230,13 +229,17 @@ app.get('/', (req, res) => {
 // UPDATED: Incident POST route to accept and save imageUrl
 app.post('/api/incidents', async (req, res) => {
     try {
-        const { type, location, imageUrl } = req.body; // NEW: Destructure imageUrl
+        const { type, location, imageUrl, description } = req.body; // NEW: include description
         if (!type || !location) {
             return res.status(400).json({ message: 'Type and location are required.' });
         }
-        const newIncident = new Incident({ type, location, imageUrl }); // Pass imageUrl to model
+
+        // Create incident without AI fields first
+        let newIncident = new Incident({ type, location, imageUrl, description });
         await newIncident.save();
-        io.emit('new-incident', newIncident); // Emit to all, now including imageUrl
+
+        // No AI processing: save and emit incident as-is
+        io.emit('new-incident', newIncident);
         res.status(201).json(newIncident);
     } catch (error) {
         console.error('Error adding incident:', error);
@@ -283,59 +286,9 @@ app.get('/api/incidents', async (req, res) => {
     }
 });
 
-// AI Image Analysis Route (uses uploadAiImage for memory storage)
-app.post('/api/analyze-image', uploadAiImage.single('image'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).send('No image file uploaded.');
-    }
+// (Removed AI chat proxy route)
 
-    try {
-        console.log('Sending image to Python AI microservice...');
-
-        const nodeFormData = new FormData();
-        nodeFormData.append('image', req.file.buffer, {
-            filename: req.file.originalname,
-            contentType: req.file.mimetype,
-        });
-
-        const pythonAiResponse = await axios.post('http://localhost:5001/analyze-image', nodeFormData, {
-            headers: {
-                'Content-Type': `multipart/form-data; boundary=${nodeFormData._boundary}`,
-            },
-            maxBodyLength: Infinity,
-            maxContentLength: Infinity,
-        });
-
-        const aiResults = pythonAiResponse.data;
-        console.log('Received AI results from Python:', aiResults.detections);
-
-        res.json({
-            message: 'Image analyzed successfully by Python AI microservice!',
-            detections: aiResults.detections,
-            fileName: req.file.originalname
-        });
-    } catch (error) {
-        console.error('Error calling Python AI microservice:', error.message);
-        if (error.response) {
-            console.error('Python AI Service Response Error:', error.response.status, error.response.data);
-            res.status(error.response.status).json({
-                message: 'Error from Python AI microservice.',
-                details: error.response.data
-            });
-        } else if (error.request) {
-            console.error('No response received from Python AI Service. Is it running on port 5001?', error.request);
-            res.status(500).json({
-                message: 'No response from Python AI microservice. Is it running on port 5001?',
-                error: error.message
-            });
-        } else {
-            res.status(500).json({
-                message: 'Failed to send request to Python AI microservice.',
-                error: error.message
-            });
-        }
-    }
-});
+// (Removed AI image analysis route)
 
 // --- Alert Media Upload Route (reusing for incident media too for simplicity) ---
 app.post('/api/alert-media-upload', uploadMediaToDisk.single('alertMedia'), (req, res) => { // 'alertMedia' is the field name

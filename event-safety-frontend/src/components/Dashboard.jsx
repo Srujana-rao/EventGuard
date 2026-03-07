@@ -34,7 +34,6 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
-import ImageSearchIcon from '@mui/icons-material/ImageSearch';
 
 const darkBlue = '#0f172a'; // Dark navy blue
 
@@ -610,68 +609,7 @@ const NewIncidentTab = ({
   );
 };
 
-const AIAnalysisTab = ({
-  selectedImage,
-  handleImageChange,
-  handleAnalyzeImage,
-  aiAnalysisLoading,
-  aiAnalysisError,
-  imagePreviewUrl,
-  aiDetections,
-  canvasRef,
-}) => {
-  return (
-    <Paper elevation={4} sx={{ p: 4, borderRadius: 3, maxWidth: 600, mx: 'auto' }}>
-      <Typography variant="h5" gutterBottom fontWeight={700}>
-        AI Image Analysis
-      </Typography>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleImageChange}
-        style={{ marginBottom: 20 }}
-        aria-label="Select image for AI analysis"
-      />
-      <Button
-        onClick={handleAnalyzeImage}
-        disabled={aiAnalysisLoading || !selectedImage}
-        variant="contained"
-        color="secondary"
-        fullWidth
-        sx={{ py: 1, fontSize: '0.875rem' }}
-        aria-disabled={aiAnalysisLoading || !selectedImage}
-        aria-label="Analyze image"
-      >
-        {aiAnalysisLoading ? 'Analyzing...' : 'Analyze Image'}
-      </Button>
-      {aiAnalysisError && (
-        <Typography variant="body2" color="error" mt={2} fontWeight={600} role="alert">
-          {aiAnalysisError}
-        </Typography>
-      )}
-      {imagePreviewUrl && (
-        <Box mt={4}>
-          <Typography variant="subtitle1" fontWeight={600}>
-            Detected Objects:
-          </Typography>
-          <canvas ref={canvasRef} style={{ width: '100%', maxWidth: 600 }} aria-label="AI detection canvas" />
-          {aiDetections.length > 0 && (
-            <Box mt={3}>
-              <ul>
-                {aiDetections.map((det, idx) => (
-                  <li key={idx}>
-                    {det.className} ({(det.probability * 100).toFixed(1)}%) - Box: ({det.box.left.toFixed(0)},{' '}
-                    {det.box.top.toFixed(0)}) to ({det.box.right.toFixed(0)}, {det.box.bottom.toFixed(0)})
-                  </li>
-                ))}
-              </ul>
-            </Box>
-          )}
-        </Box>
-      )}
-    </Paper>
-  );
-};
+// AI image analysis UI removed
 
 export default function Dashboard({
   backendMessage,
@@ -704,14 +642,6 @@ export default function Dashboard({
   fetchIncidents,
   handleAddIncident,
   handleDeleteIncident,
-  handleImageChange,
-  handleAnalyzeImage,
-  aiAnalysisLoading,
-  selectedImage,
-  aiAnalysisError,
-  imagePreviewUrl,
-  aiDetections,
-  canvasRef,
   alertMediaInputRef,
   incidentMediaInputRef,
   approvalsPending,
@@ -896,17 +826,7 @@ export default function Dashboard({
                 id="tab-newincident"
                 aria-controls="tabpanel-newincident"
               />
-              <Tab
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <ImageSearchIcon fontSize="small" />
-                    AI Image Analysis
-                  </Box>
-                }
-                value="aiAnalysis"
-                id="tab-aianalysis"
-                aria-controls="tabpanel-aianalysis"
-              />
+              {/* AI Image Analysis tab removed */}
             </Tabs>
           </Box>
         )}
@@ -970,18 +890,7 @@ export default function Dashboard({
                   incidentMediaInputRef={incidentMediaInputRef}
                 />
               )}
-              {activeTab === 'aiAnalysis' && (
-                <AIAnalysisTab
-                  selectedImage={selectedImage}
-                  handleImageChange={handleImageChange}
-                  handleAnalyzeImage={handleAnalyzeImage}
-                  aiAnalysisLoading={aiAnalysisLoading}
-                  aiAnalysisError={aiAnalysisError}
-                  imagePreviewUrl={imagePreviewUrl}
-                  aiDetections={aiDetections}
-                  canvasRef={canvasRef}
-                />
-              )}
+              {/* AI image analysis tab content removed */}
             </>
           )}
         </Box>

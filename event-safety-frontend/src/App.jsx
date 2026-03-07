@@ -37,13 +37,7 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
   const [alertPriority, setAlertPriority] = useState('info'); // 'urgent', 'important', 'info'
   const [alertLocationTag, setAlertLocationTag] = useState('');
 
-  // AI Image Analysis State
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
-  const [aiDetections, setAiDetections] = useState([]);
-  const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
-  const [aiAnalysisError, setAiAnalysisError] = useState(null);
-  const canvasRef = useRef(null);
+  // (AI Image Analysis removed)
 
   // React Refs for File Inputs
   const alertMediaInputRef = useRef(null);
@@ -57,78 +51,77 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
     window.location.href = '/';
   };
 
-  // Socket.IO Authentication & Event Listeners
-  useEffect(() => {
-    const token = localStorage.getItem('token');
+  /// Socket.IO Authentication & Event Listeners
 
-    if (isAuthenticated && token) {
-      socket.auth = { token };
-      setTimeout(() => {
-        if (!socket.connected) {
-          console.log('Socket not connected, attempting to connect...');
-          socket.connect();
-        } else {
-          socket.emit('authenticate', token);
-        }
-      }, 50);
-    } else {
-      if (socket.connected) {
-        console.log('User not authenticated, disconnecting socket...');
-        socket.disconnect();
-      } else {
-        console.log('User not authenticated and socket already disconnected/not connected.');
-      }
+useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  if (!isAuthenticated || !token) {
+    if (socket.connected) {
+      console.log("User not authenticated, disconnecting socket...");
+      socket.disconnect();
     }
+    return;
+  }
 
-    // Socket.IO event listeners
-    socket.on('connect', () => {
-      console.log('Connected to Socket.IO backend!');
-    });
+  const handleConnect = () => {
+    console.log("Connected to Socket.IO backend!");
+    console.log("Authenticating socket...");
+    socket.emit("authenticate", token);
+  };
 
-    socket.on('authenticated', ({ status, user }) => {
-      if (status) {
-        console.log(`Socket authenticated for user: ${user.username} (${user.role})`);
-      } else {
-        console.error('Socket authentication failed!');
-        handleSetAuth(false);
-      }
-    });
+  const handleAuthenticated = ({ status, user }) => {
+    if (status) {
+      console.log(`Socket authenticated for user: ${user.username} (${user.role})`);
+    } else {
+      console.error("Socket authentication failed!");
+      handleSetAuth(false);
+    }
+  };
 
-    socket.on('receive-alert', (alertData) => {
-      setRealtimeAlerts((prevAlerts) => [...prevAlerts, alertData]);
-    });
+ const handleReceiveAlert = (alertData) => {
+  setRealtimeAlerts((prev) => {
+    if (prev.find(a => a._id === alertData._id)) return prev;
+    return [...prev, alertData];
+  });
+};
 
-    socket.on('new-incident', () => {
-      fetchIncidents();
-    });
+  const handleNewIncident = () => {
+    fetchIncidents();
+  };
 
-    socket.on('incident-deleted', (incidentId) => {
-      setIncidents((prevIncidents) => prevIncidents.filter((inc) => inc._id !== incidentId));
-    });
+  const handleIncidentDeleted = (incidentId) => {
+    setIncidents((prev) => prev.filter((inc) => inc._id !== incidentId));
+  };
 
-    socket.on('disconnect', () => {
-      console.log('Disconnected from Socket.IO backend!');
-    });
+  const handleDisconnect = () => {
+    console.log("Disconnected from Socket.IO backend!");
+  };
 
-    socket.on('connect_error', (err) => {
-      console.error('Socket connection error:', err.message);
-      if (err.message === 'jwt expired' || err.message === 'Invalid token') {
-        handleSetAuth(false);
-        console.log('Your session expired or token is invalid. Please log in again.');
-      }
-    });
+  // attach listeners
+  socket.on("connect", handleConnect);
+  socket.on("authenticated", handleAuthenticated);
+  socket.on("receive-alert", handleReceiveAlert);
+  socket.on("new-incident", handleNewIncident);
+  socket.on("incident-deleted", handleIncidentDeleted);
+  socket.on("disconnect", handleDisconnect);
 
-    // Clean up event listeners
-    return () => {
-      socket.off('connect');
-      socket.off('authenticated');
-      socket.off('receive-alert');
-      socket.off('new-incident');
-      socket.off('incident-deleted');
-      socket.off('disconnect');
-      socket.off('connect_error');
-    };
-  }, [isAuthenticated, handleSetAuth]);
+  // connect socket AFTER listeners
+  if (!socket.connected) {
+    console.log("Connecting socket...");
+    socket.connect();
+  }
+
+  return () => {
+    socket.off("connect", handleConnect);
+    socket.off("authenticated", handleAuthenticated);
+    socket.off("receive-alert", handleReceiveAlert);
+    socket.off("new-incident", handleNewIncident);
+    socket.off("incident-deleted", handleIncidentDeleted);
+    socket.off("disconnect", handleDisconnect);
+  };
+
+}, [isAuthenticated]);
 
   // Send Alert Handler
   const handleSendAlert = async (e) => {
@@ -270,86 +263,7 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
     }
   };
 
-  // AI Image Analysis Handlers
-  const handleImageChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setSelectedImage(file);
-      setImagePreviewUrl(URL.createObjectURL(file));
-      setAiDetections([]);
-      setAiAnalysisError(null);
-      setAiAnalysisLoading(false);
-    }
-  };
-
-  const handleAnalyzeImage = async () => {
-    if (!selectedImage) {
-      setAiAnalysisError('Please select an image to analyze.');
-      return;
-    }
-    setAiAnalysisLoading(true);
-    setAiDetections([]);
-    const formData = new FormData();
-    formData.append('image', selectedImage);
-
-    try {
-      const token = localStorage.getItem('token');
-      const config = token ? { headers: { 'x-auth-token': token, 'Content-Type': 'multipart/form-data' } } : { headers: { 'Content-Type': 'multipart/form-data' } };
-      const response = await axios.post(`${API_BASE_URL}/analyze-image`, formData, config);
-      setAiDetections(response.data.detections || []);
-    } catch (err) {
-      if (err.response) setAiAnalysisError(`AI Service Error: ${err.response.data.message || err.response.statusText}`);
-      else if (err.request) setAiAnalysisError('No response from AI Service. Is the backend and Python service running?');
-      else setAiAnalysisError(`Analysis failed: ${err.message}`);
-      setAiDetections([]);
-    } finally {
-      setAiAnalysisLoading(false);
-    }
-  };
-
-  // Canvas Drawing Effect
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !imagePreviewUrl) return;
-
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    img.src = imagePreviewUrl;
-
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, img.width, img.height);
-
-      aiDetections.forEach((detection) => {
-        const { className, probability, box } = detection;
-        const { left, top, right, bottom } = box;
-
-        ctx.beginPath();
-        ctx.rect(left, top, right - left, bottom - top);
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = 'lime';
-        ctx.fillStyle = 'lime';
-        ctx.stroke();
-
-        const label = `${className} (${(probability * 100).toFixed(1)}%)`;
-        ctx.font = '24px Roboto';
-        const textMetrics = ctx.measureText(label);
-        const textWidth = textMetrics.width;
-        const textHeight = 24;
-
-        ctx.fillRect(left, top - textHeight - 10, textWidth + 10, textHeight + 10);
-        ctx.fillStyle = 'black';
-        ctx.fillText(label, left + 5, top - 5);
-      });
-    };
-    return () => {
-      if (imagePreviewUrl) {
-        URL.revokeObjectURL(imagePreviewUrl);
-      }
-    };
-  }, [imagePreviewUrl, aiDetections]);
+  // (AI image analysis UI and effects removed)
 
   return (
     <Dashboard
@@ -383,14 +297,7 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
       fetchIncidents={fetchIncidents}
       handleAddIncident={handleAddIncident}
       handleDeleteIncident={handleDeleteIncident}
-      handleImageChange={handleImageChange}
-      handleAnalyzeImage={handleAnalyzeImage}
-      aiAnalysisLoading={aiAnalysisLoading}
-      selectedImage={selectedImage}
-      aiAnalysisError={aiAnalysisError}
-      imagePreviewUrl={imagePreviewUrl}
-      aiDetections={aiDetections}
-      canvasRef={canvasRef}
+      /* AI image analysis feature removed */
       alertMediaInputRef={alertMediaInputRef}
       incidentMediaInputRef={incidentMediaInputRef}
     />
