@@ -9,13 +9,10 @@ import Login from './components/Login';
 import HeadDashboard from './components/HeadDashboard'; // Head Dashboard Component
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
-import SocialSuccess from './components/SocialSuccess';
 import Dashboard from './components/Dashboard';
 
 // Socket.IO client instance
-const socket = io('http://localhost:5000', {
-  autoConnect: false,
-});
+import { socket } from './socket';
 
 function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
   const [backendMessage, setBackendMessage] = useState('');
@@ -56,9 +53,10 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
 useEffect(() => {
   const token = localStorage.getItem("token");
 
-  if (!isAuthenticated || !token) {
+  // Only disconnect if absolutely no token
+  if (!token) {
     if (socket.connected) {
-      console.log("User not authenticated, disconnecting socket...");
+      console.log("No token found, disconnecting socket...");
       socket.disconnect();
     }
     return;
@@ -339,9 +337,27 @@ function App() {
     }
   };
 
-  useEffect(() => {
-    handleSetAuth(!!localStorage.getItem('token'));
-  }, []);
+useEffect(() => {
+
+  const token = localStorage.getItem("token");
+  const user = localStorage.getItem("user");
+
+  if (token && user) {
+
+    const parsedUser = JSON.parse(user);
+
+    setIsAuthenticated(true);
+    setUserRole(parsedUser.role);
+    setUsername(parsedUser.username);
+
+    axios.defaults.headers.common["x-auth-token"] = token;
+
+  } else {
+
+    setIsAuthenticated(false);
+  }
+
+}, []);
 
   return (
     <Router>
@@ -351,7 +367,7 @@ function App() {
         <Route path="/login" element={<Login setAuth={handleSetAuth} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/social-success" element={<SocialSuccess setAuth={handleSetAuth} />} />
+        {/* Social sign-in callback removed */}
         <Route
           path="/head-dashboard"
           element={userRole === 'head' ? <HeadDashboard userRole={userRole} /> : <Navigate to="/" />}
@@ -367,13 +383,13 @@ function App() {
                 handleSetAuth={handleSetAuth}
               />
             ) : (
-              <Navigate to="/" />
+              <Navigate to="/dashboard" />
             )
           }
         />
         <Route
           path="/*"
-          element={<Navigate to="/" />}
+           element={isAuthenticated ? <Navigate to="/dashboard" /> : <Navigate to="/" />}
         />
       </Routes>
     </Router>

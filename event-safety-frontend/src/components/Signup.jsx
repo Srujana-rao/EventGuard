@@ -10,8 +10,6 @@ import {
   Container,
   Paper,
   Alert,
-  FormControlLabel,
-  Checkbox,
   Divider,
   IconButton,
   InputAdornment,
@@ -23,7 +21,6 @@ import {
   Email,
   Lock,
   Person,
-  Google,
   Security,
 } from '@mui/icons-material';
 
@@ -33,7 +30,6 @@ export default function Signup({ setAuth }) {
     email: '',
     password: '',
     confirmPassword: '',
-    rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -41,43 +37,14 @@ export default function Signup({ setAuth }) {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Enhanced remember password functionality
-  useEffect(() => {
-    const savedEmail = localStorage.getItem('rememberedEmail');
-    const savedPassword = localStorage.getItem('rememberedPassword');
-    if (savedEmail && savedPassword) {
-      setFormData(prev => ({
-        ...prev,
-        email: savedEmail,
-        password: savedPassword,
-        confirmPassword: savedPassword,
-        rememberMe: true,
-      }));
-    }
-  }, []);
-
-  // Auto-fill password when email matches saved credentials
   const handleEmailChange = (e) => {
     const email = e.target.value;
-    const savedEmail = localStorage.getItem('rememberedEmail');
-    const savedPassword = localStorage.getItem('rememberedPassword');
-    
-    setFormData(prev => ({
-      ...prev,
-      email: email,
-      password: email === savedEmail ? savedPassword : prev.password,
-      confirmPassword: email === savedEmail ? savedPassword : prev.confirmPassword,
-      rememberMe: email === savedEmail ? true : prev.rememberMe,
-    }));
+    setFormData(prev => ({ ...prev, email }));
   };
 
   const handlePasswordChange = (e) => {
     const password = e.target.value;
-    setFormData(prev => ({
-      ...prev,
-      password: password,
-      confirmPassword: prev.rememberMe && prev.email === localStorage.getItem('rememberedEmail') ? password : prev.confirmPassword,
-    }));
+    setFormData(prev => ({ ...prev, password }));
   };
 
   const handleConfirmPasswordChange = (e) => {
@@ -94,12 +61,7 @@ export default function Signup({ setAuth }) {
     }));
   };
 
-  const handleRememberMeChange = (e) => {
-    setFormData(prev => ({
-      ...prev,
-      rememberMe: e.target.checked,
-    }));
-  };
+  // remember-me removed
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -126,14 +88,7 @@ export default function Signup({ setAuth }) {
         password: formData.password,
       });
 
-      // Handle remember me functionality
-      if (formData.rememberMe) {
-        localStorage.setItem('rememberedEmail', formData.email);
-        localStorage.setItem('rememberedPassword', formData.password);
-      } else {
-        localStorage.removeItem('rememberedEmail');
-        localStorage.removeItem('rememberedPassword');
-      }
+      // (Remember-me removed)
 
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
@@ -146,9 +101,7 @@ export default function Signup({ setAuth }) {
     }
   };
 
-  const handleGoogleSignup = () => {
-    window.location.href = 'http://localhost:5000/api/auth/google';
-  };
+  // Social signup removed
 
   return (
     <Box
@@ -423,33 +376,7 @@ export default function Signup({ setAuth }) {
 
 
 
-              {/* Remember Me Checkbox */}
-              <Box sx={{ mb: 4 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      name="rememberMe"
-                      checked={formData.rememberMe}
-                      onChange={handleRememberMeChange}
-                      sx={{
-                        color: '#667eea',
-                        '&.Mui-checked': {
-                          color: '#667eea',
-                        },
-                      }}
-                    />
-                  }
-                  label={
-                    <Typography sx={{ 
-                      color: '#666', 
-                      fontSize: '0.9rem',
-                      fontWeight: 500,
-                    }}>
-                      Remember my credentials for future logins
-                    </Typography>
-                  }
-                />
-              </Box>
+                {/* Remember-me removed */}
 
               {/* Create Account Button */}
               <Button
@@ -461,6 +388,7 @@ export default function Signup({ setAuth }) {
                 sx={{
                   py: 1.5,
                   borderRadius: 2,
+                  marginTop: 3,
                   fontSize: '1rem',
                   fontWeight: 600,
                   backgroundColor: '#667eea',
@@ -478,45 +406,7 @@ export default function Signup({ setAuth }) {
               </Button>
             </Box>
 
-            {/* Divider */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-              <Divider sx={{ flex: 1, backgroundColor: '#e0e0e0' }} />
-              <Typography sx={{ 
-                mx: 2, 
-                color: '#999', 
-                fontSize: '0.9rem',
-                fontWeight: 500,
-              }}>
-                OR
-              </Typography>
-              <Divider sx={{ flex: 1, backgroundColor: '#e0e0e0' }} />
-            </Box>
-
-            {/* Google Signup Button */}
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<Google />}
-              onClick={handleGoogleSignup}
-              sx={{
-                py: 1.5,
-                borderRadius: 2,
-                fontSize: '1rem',
-                fontWeight: 600,
-                border: '2px solid #e0e0e0',
-                color: '#333',
-                backgroundColor: 'white',
-                mb: 3,
-                textTransform: 'none',
-                '&:hover': {
-                  borderColor: '#667eea',
-                  backgroundColor: '#f8f9fa',
-                  color: '#667eea',
-                },
-              }}
-            >
-              Continue with Google
-            </Button>
+            {/* Social signup removed */}
 
             {/* Login Link */}
             <Box sx={{ textAlign: 'center' }}>

@@ -288,6 +288,66 @@ const AlertsTab = ({
             required
             inputProps={{ 'aria-label': 'Alert message' }}
           />
+          <Box sx={{ mb: 3 }}>
+  <Typography fontWeight={600} sx={{ mb: 1 }}>
+   Quick Emergency
+  </Typography>
+
+  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+    <Button
+      variant="outlined"
+      
+      size="small"
+      onClick={() => {
+        setAlertMessage("Fire reported");
+        setAlertPriority("urgent");
+      }}
+    >
+       Fire
+    </Button>
+
+    <Button
+      variant="outlined"
+      
+      size="small"
+      onClick={() => {
+        setAlertMessage("Medical Emergency");
+        setAlertPriority("urgent");
+      }}
+    >
+      Medical
+    </Button>
+
+    <Button
+      variant="outlined"
+      
+      size="small"
+      onClick={() => {
+        setAlertMessage("Security Issue");
+        setAlertPriority("urgent");
+      }}
+    >
+      Security
+    </Button>
+
+    <Button
+      variant="outlined"
+      size="small"
+      onClick={() => setAlertMessage("Lost Person")}
+    >
+      Lost Person
+    </Button>
+
+    <Button
+      variant="outlined"
+      
+      size="small"
+      onClick={() => setAlertMessage("Crowd Congestion")}
+    >
+      Crowd
+    </Button>
+  </Box>
+</Box>
           {alertMediaFile && (
             <Box sx={{ mb: 2 }}>
               <Typography variant="body2" sx={{ mb: 1 }}>Selected media:</Typography>
@@ -310,51 +370,102 @@ const AlertsTab = ({
               )}
             </Box>
           )}
-          <input
-            type="file"
-            accept="image/*,video/*,audio/*"
-            onChange={(e) => {
-              if (e.target.files.length > 0) {
-                setAlertMediaFile(e.target.files[0]);
-              } else {
-                setAlertMediaFile(null);
-              }
-            }}
-            style={{ marginBottom: 20 }}
-            ref={alertMediaInputRef}
-            aria-label="Select alert media file"
-          />
-          <FormControl fullWidth sx={{ mb: 3 }} required>
-            <InputLabel id="send-to-label">Send To</InputLabel>
-            <Select
-              labelId="send-to-label"
-              value={alertTargetRole}
-              label="Send To"
-              onChange={(e) => setAlertTargetRole(e.target.value)}
-              aria-required="true"
-              aria-label="Select alert recipient group"
-            >
-              <MenuItem value="all">All Members</MenuItem>
-              <MenuItem value="head">Heads Only</MenuItem>
-              <MenuItem value="room">Security Room</MenuItem>
-              <MenuItem value="ground">On Ground</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl fullWidth sx={{ mb: 3 }} required>
-            <InputLabel id="priority-label">Priority</InputLabel>
-            <Select
-              labelId="priority-label"
-              value={alertPriority}
-              label="Priority"
-              onChange={(e) => setAlertPriority(e.target.value)}
-              aria-required="true"
-              aria-label="Select alert priority"
-            >
-              <MenuItem value="info">Info</MenuItem>
-              <MenuItem value="important">Important</MenuItem>
-              <MenuItem value="urgent">Urgent</MenuItem>
-            </Select>
-          </FormControl>
+          <Box sx={{ mb: 3 }}>
+  <Typography fontWeight={600} sx={{ mb: 1 }}>
+    Add Media
+  </Typography>
+  {/* Camera */}
+  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+  <Button
+    variant="outlined"
+    component="label"
+  >
+    Capture Photo
+    <input
+      hidden
+      type="file"
+      accept="image/*"
+      capture="environment"
+      onChange={(e) => {
+        if (e.target.files.length > 0) {
+          setAlertMediaFile(e.target.files[0]);
+        }
+      }}
+    />
+  </Button>
+
+  {/* Upload */}
+  <Button
+    variant="outlined"
+    component="label"
+  >
+    Upload
+    <input
+      hidden
+      type="file"
+      accept="image/*,video/*,audio/*"
+      ref={alertMediaInputRef}
+      onChange={(e) => {
+        if (e.target.files.length > 0) {
+          setAlertMediaFile(e.target.files[0]);
+        } else {
+          setAlertMediaFile(null);
+        } 
+      }}
+    />
+  </Button>
+</Box>
+</Box>
+          <Box sx={{ mb: 3 }}>
+  <Typography fontWeight={600} sx={{ mb: 1 }}>
+    Send To
+  </Typography>
+
+  <Box sx={{ display: "flex", gap: 1 }}>
+    {["all", "head", "room", "ground"].map((role) => (
+      <Button
+        key={role}
+        variant={alertTargetRole === role ? "contained" : "outlined"}
+        onClick={() => setAlertTargetRole(role)}
+      >
+        {role.toUpperCase()}
+      </Button>
+    ))}
+  </Box>
+</Box>
+          <Box sx={{ mb: 3 }}>
+  <Typography fontWeight={600} sx={{ mb: 1 }}>
+    Priority
+  </Typography>
+
+  <Box sx={{ display: "flex", gap: 1 }}>
+
+    <Button
+      variant={alertPriority === "info" ? "contained" : "outlined"}
+      color="success"
+      onClick={() => setAlertPriority("info")}
+    >
+      Info
+    </Button>
+
+    <Button
+      variant={alertPriority === "important" ? "contained" : "outlined"}
+      color="warning"
+      onClick={() => setAlertPriority("important")}
+    >
+      Important
+    </Button>
+
+    <Button
+      variant={alertPriority === "urgent" ? "contained" : "outlined"}
+      color="error"
+      onClick={() => setAlertPriority("urgent")}
+    >
+      Urgent
+    </Button>
+
+  </Box>
+</Box>
           <TextField
          
             variant="standard"

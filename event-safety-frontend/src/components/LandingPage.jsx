@@ -460,7 +460,7 @@ export default function LandingPage() {
       >
         <Container maxWidth={false} sx={{ px: 4 }}>
           <Typography variant="body2" sx={{ opacity: 0.7 }}>
-            © 2024 EventGuard. All rights reserved. | Secure. Smart. Reliable.
+            © 2026 EventGuard. All rights reserved. | Secure. Smart. Reliable.
           </Typography>
         </Container>
       </Box>
