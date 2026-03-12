@@ -151,7 +151,7 @@ export default function Meetings({ userRole }) {
             <Box component="form" onSubmit={handleCreateMeeting} noValidate>
               <TextField
                 label="Title"
-                variant="standard"
+                variant="outlined"
                 fullWidth
                 margin="normal"
                 value={title}
@@ -160,7 +160,7 @@ export default function Meetings({ userRole }) {
               />
               <TextField
                 label="Description"
-                variant="standard"
+                variant="outlined"
                 fullWidth
                 margin="normal"
                 multiline
@@ -202,7 +202,7 @@ export default function Meetings({ userRole }) {
               />
               <TextField
                 label="Meeting Link (optional)"
-                variant="standard"
+                variant="outlined"
                 fullWidth
                 margin="normal"
                 value={meetingLink}
