@@ -10,6 +10,9 @@ import HeadDashboard from './components/HeadDashboard'; // Head Dashboard Compon
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import Dashboard from './components/Dashboard';
+import StaffInfo from './components/StaffInfo';
+import Meetings from './components/Meetings';
+import DashboardShell from './components/DashboardShell';
 
 // Socket.IO client instance
 import { socket } from './socket';
@@ -24,6 +27,7 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
   const [incidentsError, setIncidentsError] = useState(null);
 
   const [realtimeAlerts, setRealtimeAlerts] = useState([]);
+  const [meetingNotificationCount, setMeetingNotificationCount] = useState(0);
 
   // Alert Composer State
   const [alertMessage, setAlertMessage] = useState('');
@@ -50,76 +54,91 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
 
   /// Socket.IO Authentication & Event Listeners
 
-useEffect(() => {
-  const token = localStorage.getItem("token");
+  useEffect(() => {
+    const token = localStorage.getItem('token');
 
-  // Only disconnect if absolutely no token
-  if (!token) {
-    if (socket.connected) {
-      console.log("No token found, disconnecting socket...");
-      socket.disconnect();
+    // Only disconnect if absolutely no token
+    if (!token) {
+      if (socket.connected) {
+        console.log('No token found, disconnecting socket...');
+        socket.disconnect();
+      }
+      return;
     }
-    return;
-  }
 
-  const handleConnect = () => {
-    console.log("Connected to Socket.IO backend!");
-    console.log("Authenticating socket...");
-    socket.emit("authenticate", token);
-  };
+    const handleConnect = () => {
+      console.log('Connected to Socket.IO backend!');
+      console.log('Authenticating socket...');
+      socket.emit('authenticate', token);
+    };
 
-  const handleAuthenticated = ({ status, user }) => {
-    if (status) {
-      console.log(`Socket authenticated for user: ${user.username} (${user.role})`);
-    } else {
-      console.error("Socket authentication failed!");
-      handleSetAuth(false);
+    const handleAuthenticated = ({ status, user }) => {
+      if (status) {
+        console.log(`Socket authenticated for user: ${user.username} (${user.role})`);
+      } else {
+        console.error('Socket authentication failed!');
+        handleSetAuth(false);
+      }
+    };
+
+    const handleReceiveAlert = (alertData) => {
+      setRealtimeAlerts((prev) => {
+        if (prev.find((a) => a._id === alertData._id)) return prev;
+        return [...prev, alertData];
+      });
+    };
+
+    const handleNewIncident = () => {
+      fetchIncidents();
+    };
+
+    const handleIncidentDeleted = (incidentId) => {
+      setIncidents((prev) => prev.filter((inc) => inc._id !== incidentId));
+    };
+
+    const handleNewMeeting = (meeting) => {
+      // Only notify if the meeting wasn't created by the current user
+      if (meeting?.createdBy && meeting.createdBy === username) {
+        return;
+      }
+      setMeetingNotificationCount((prev) => prev + 1);
+    };
+
+    const handleMeetingDeleted = () => {
+      setMeetingNotificationCount((prev) => (prev > 0 ? prev - 1 : 0));
+    };
+
+    const handleDisconnect = () => {
+      console.log('Disconnected from Socket.IO backend!');
+    };
+
+    // attach listeners
+    socket.on('connect', handleConnect);
+    socket.on('authenticated', handleAuthenticated);
+    socket.on('receive-alert', handleReceiveAlert);
+    socket.on('new-incident', handleNewIncident);
+    socket.on('incident-deleted', handleIncidentDeleted);
+    socket.on('new-meeting', handleNewMeeting);
+    socket.on('meeting-deleted', handleMeetingDeleted);
+    socket.on('disconnect', handleDisconnect);
+
+    // connect socket AFTER listeners
+    if (!socket.connected) {
+      console.log('Connecting socket...');
+      socket.connect();
     }
-  };
 
- const handleReceiveAlert = (alertData) => {
-  setRealtimeAlerts((prev) => {
-    if (prev.find(a => a._id === alertData._id)) return prev;
-    return [...prev, alertData];
-  });
-};
-
-  const handleNewIncident = () => {
-    fetchIncidents();
-  };
-
-  const handleIncidentDeleted = (incidentId) => {
-    setIncidents((prev) => prev.filter((inc) => inc._id !== incidentId));
-  };
-
-  const handleDisconnect = () => {
-    console.log("Disconnected from Socket.IO backend!");
-  };
-
-  // attach listeners
-  socket.on("connect", handleConnect);
-  socket.on("authenticated", handleAuthenticated);
-  socket.on("receive-alert", handleReceiveAlert);
-  socket.on("new-incident", handleNewIncident);
-  socket.on("incident-deleted", handleIncidentDeleted);
-  socket.on("disconnect", handleDisconnect);
-
-  // connect socket AFTER listeners
-  if (!socket.connected) {
-    console.log("Connecting socket...");
-    socket.connect();
-  }
-
-  return () => {
-    socket.off("connect", handleConnect);
-    socket.off("authenticated", handleAuthenticated);
-    socket.off("receive-alert", handleReceiveAlert);
-    socket.off("new-incident", handleNewIncident);
-    socket.off("incident-deleted", handleIncidentDeleted);
-    socket.off("disconnect", handleDisconnect);
-  };
-
-}, [isAuthenticated]);
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('authenticated', handleAuthenticated);
+      socket.off('receive-alert', handleReceiveAlert);
+      socket.off('new-incident', handleNewIncident);
+      socket.off('incident-deleted', handleIncidentDeleted);
+      socket.off('new-meeting', handleNewMeeting);
+      socket.off('meeting-deleted', handleMeetingDeleted);
+      socket.off('disconnect', handleDisconnect);
+    };
+  }, [isAuthenticated, handleSetAuth, username]);
 
   // Send Alert Handler
   const handleSendAlert = async (e) => {
@@ -298,6 +317,7 @@ useEffect(() => {
       /* AI image analysis feature removed */
       alertMediaInputRef={alertMediaInputRef}
       incidentMediaInputRef={incidentMediaInputRef}
+      meetingNotificationCount={meetingNotificationCount}
     />
   );
 }
@@ -370,7 +390,15 @@ useEffect(() => {
         {/* Social sign-in callback removed */}
         <Route
           path="/head-dashboard"
-          element={userRole === 'head' ? <HeadDashboard userRole={userRole} /> : <Navigate to="/" />}
+          element={
+            userRole === 'head' ? (
+              <DashboardShell title="User Approvals">
+                <HeadDashboard userRole={userRole} />
+              </DashboardShell>
+            ) : (
+              <Navigate to="/" />
+            )
+          }
         />
         <Route
           path="/dashboard"
@@ -382,6 +410,30 @@ useEffect(() => {
                 username={username}
                 handleSetAuth={handleSetAuth}
               />
+            ) : (
+              <Navigate to="/" />
+            )
+          }
+        />
+        <Route
+          path="/staff-info"
+          element={
+            isAuthenticated ? (
+              <DashboardShell title="Staff Info">
+                <StaffInfo />
+              </DashboardShell>
+            ) : (
+              <Navigate to="/dashboard" />
+            )
+          }
+        />
+        <Route
+          path="/meetings"
+          element={
+            isAuthenticated ? (
+              <DashboardShell title="Meetings">
+                <Meetings userRole={userRole} />
+              </DashboardShell>
             ) : (
               <Navigate to="/dashboard" />
             )

@@ -50,19 +50,38 @@ function SidebarMenu({
   mobileOpen,
   onDrawerToggle,
   onLogout,
+  meetingNotificationCount = 0,
 }) {
   const location = useLocation();
-  const matchDashboard = location.pathname === '/';
+  const matchDashboard = location.pathname === '/dashboard';
   const matchHeadDashboard = location.pathname === '/head-dashboard';
+  const matchStaffInfo = location.pathname === '/staff-info';
+  const matchMeetings = location.pathname === '/meetings';
 
   const buttons = [
     {
       label: 'Main Dashboard',
-      to: '/',
+      to: '/dashboard',
       icon: <NotificationsActiveIcon />,
       showBadge: true,
       badgeContent: null, // Will be updated by parent usage if needed
       active: matchDashboard,
+    },
+    {
+      label: 'Staff Info',
+      to: '/staff-info',
+      icon: <AdminPanelSettingsIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchStaffInfo,
+    },
+    {
+      label: 'Meetings',
+      to: '/meetings',
+      icon: <AddCircleOutlineIcon />,
+      showBadge: meetingNotificationCount > 0,
+      badgeContent: meetingNotificationCount,
+      active: matchMeetings,
     },
   ];
 
@@ -756,6 +775,7 @@ export default function Dashboard({
   alertMediaInputRef,
   incidentMediaInputRef,
   approvalsPending,
+  meetingNotificationCount,
 }) {
   const [activeTab, setActiveTab] = useState('alerts');
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -813,6 +833,7 @@ export default function Dashboard({
         mobileOpen={mobileOpen}
         onDrawerToggle={handleDrawerToggle}
         onLogout={handleLogout}
+        meetingNotificationCount={meetingNotificationCount}
       />
 
       {/* For mobile: App bar with menu button */}
@@ -862,7 +883,7 @@ export default function Dashboard({
         <Box
           sx={{
             width: '100%',
-            height: 64,
+            height: 72,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -871,29 +892,33 @@ export default function Dashboard({
             px: 4,
             position: 'fixed',
             top: { xs: 64, md: 0 },
-            left: { xs: 0, md: sidebarWidth },
+            left: 0,
             right: 0,
             zIndex: 1350,
             boxShadow: 3,
           }}
         >
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{
-              fontWeight: 500,
-              letterSpacing: 0.5,
-              minWidth: 180,
-              
-              textAlign: 'center',
-              flexGrow: 1,
-            }}
-            aria-live="polite"
-          >
-            {isHeadDashboard
-              ? `User Approvals Pending (${approvalsPending})`
-              : `Welcome, ${username} (${userRole})`}
-          </Typography>
+          <Box sx={{ textAlign: 'center', width: '100%' }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 800,
+                letterSpacing: 0.6,
+                lineHeight: 1.1,
+              }}
+            >
+              EventGuard
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ opacity: 0.92, mt: 0.3 }}
+              aria-live="polite"
+            >
+              {isHeadDashboard
+                ? `User Approvals Pending (${approvalsPending})`
+                : `Welcome, ${username} (${userRole})`}
+            </Typography>
+          </Box>
         </Box>
 
         {/* Tabs for navigation (only on Main Dashboard) */}
@@ -952,8 +977,8 @@ export default function Dashboard({
             mx: 'auto',
             overflowY: 'auto',
             bgcolor: 'background.default',
-            mt: isHeadDashboard ? '64px' : 0,
-            minHeight: 'calc(100vh - 64px)',
+            mt: isHeadDashboard ? '72px' : 0,
+            minHeight: 'calc(100vh - 72px)',
           }}
           role="main"
         >

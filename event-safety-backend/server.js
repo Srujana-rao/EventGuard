@@ -6,7 +6,8 @@ const multer = require('multer');
 const path = require('path'); // Node.js path module, needed for file paths
 
 const authRoutes = require('./routes/auth'); // Import authentication routes
-const User = require('./models/User'); // NEW: Import User model for Socket.IO auth
+const User = require('./models/User'); // Import User model
+const Meeting = require('./models/Meeting'); // Import Meeting model
 const jwt = require('jsonwebtoken'); // NEW: Import JWT for Socket.IO auth
 const auth = require('./routes/auth').auth; // FIX: Import auth middleware directly for protected routes (like delete)
 // const authorizeRole = require('./routes/auth').authorizeRole; // Optional: import if needed directly in server.js routes
@@ -310,6 +311,117 @@ app.get('/api/alerts', async (req, res) => {
     } catch (error) {
         console.error('Error fetching historical alerts:', error.message);
         res.status(500).json({ message: 'Failed to fetch historical alerts.' });
+    }
+});
+// -------------------------------------------------
+
+
+// --- API Route to fetch all users (username + role + status) ---
+app.get('/api/users', async (_req, res) => {
+    try {
+        const users = await User.find().select('username role');
+        const onlineUserIds = new Set(socketToUserId.values());
+        const result = users.map((user) => {
+            const isOnline = onlineUserIds.has(user.id);
+            return {
+                username: user.username,
+                role: user.role,
+                status: isOnline ? 'online' : 'offline',
+            };
+        });
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Error fetching users:', error.message);
+        res.status(500).json({ message: 'Failed to fetch users.' });
+    }
+});
+// -------------------------------------------------
+
+
+// --- Meeting Routes ---
+// Create a new meeting (HEAD only)
+app.post('/api/meetings', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'head') {
+            return res.status(403).json({ message: 'Only head users can create meetings.' });
+        }
+
+        const { title, description, targetRole, meetingTime, meetingLink } = req.body;
+
+        if (!title || !targetRole || !meetingTime) {
+            return res.status(400).json({ message: 'Title, targetRole and meetingTime are required.' });
+        }
+
+        if (!['all', 'head', 'room', 'ground'].includes(targetRole)) {
+            return res.status(400).json({ message: 'Invalid target role for meeting.' });
+        }
+
+        const creator = await User.findById(req.user.id).select('username');
+        const createdBy = creator ? creator.username : 'Unknown';
+
+        const meeting = new Meeting({
+            title,
+            description: description || '',
+            createdBy,
+            targetRole,
+            meetingTime: new Date(meetingTime),
+            meetingLink: meetingLink || '',
+        });
+
+        await meeting.save();
+
+        // Emit meeting over Socket.IO
+        if (targetRole === 'all') {
+            io.emit('new-meeting', meeting);
+        } else {
+            io.to(targetRole).emit('new-meeting', meeting);
+        }
+
+        res.status(201).json(meeting);
+    } catch (error) {
+        console.error('Error creating meeting:', error.message);
+        res.status(500).json({ message: 'Failed to create meeting.' });
+    }
+});
+
+// Get meetings visible to the current user
+app.get('/api/meetings', auth, async (req, res) => {
+    try {
+        const userRole = req.user.role;
+        const meetings = await Meeting.find({
+            $or: [{ targetRole: 'all' }, { targetRole: userRole }],
+        }).sort({ meetingTime: 1 });
+
+        res.status(200).json(meetings);
+    } catch (error) {
+        console.error('Error fetching meetings:', error.message);
+        res.status(500).json({ message: 'Failed to fetch meetings.' });
+    }
+});
+// -------------------------------------------------
+
+// Delete meeting (HEAD only)
+app.delete('/api/meetings/:id', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'head') {
+            return res.status(403).json({ message: 'Only head users can delete meetings.' });
+        }
+
+        const { id } = req.params;
+        const meeting = await Meeting.findById(id);
+        if (!meeting) {
+            return res.status(404).json({ message: 'Meeting not found.' });
+        }
+
+        await Meeting.deleteOne({ _id: id });
+
+        // Inform all connected clients so they remove it from their lists
+        io.emit('meeting-deleted', id);
+
+        res.status(200).json({ message: 'Meeting deleted.' });
+    } catch (error) {
+        console.error('Error deleting meeting:', error.message);
+        res.status(500).json({ message: 'Failed to delete meeting.' });
     }
 });
 // -------------------------------------------------
