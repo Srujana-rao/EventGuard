@@ -13,6 +13,7 @@ import Dashboard from './components/Dashboard';
 import StaffInfo from './components/StaffInfo';
 import Meetings from './components/Meetings';
 import DashboardShell from './components/DashboardShell';
+import Settings from './components/Settings';
 
 // Socket.IO client instance
 import { socket } from './socket';
@@ -433,6 +434,18 @@ useEffect(() => {
             isAuthenticated ? (
               <DashboardShell title="Meetings">
                 <Meetings userRole={userRole} />
+              </DashboardShell>
+            ) : (
+              <Navigate to="/dashboard" />
+            )
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            isAuthenticated ? (
+              <DashboardShell title="Settings">
+                <Settings />
               </DashboardShell>
             ) : (
               <Navigate to="/dashboard" />

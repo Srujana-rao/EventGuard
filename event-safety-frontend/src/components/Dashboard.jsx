@@ -57,6 +57,7 @@ function SidebarMenu({
   const matchHeadDashboard = location.pathname === '/head-dashboard';
   const matchStaffInfo = location.pathname === '/staff-info';
   const matchMeetings = location.pathname === '/meetings';
+  const matchSettings = location.pathname === '/settings';
 
   const buttons = [
     {
@@ -82,6 +83,14 @@ function SidebarMenu({
       showBadge: meetingNotificationCount > 0,
       badgeContent: meetingNotificationCount,
       active: matchMeetings,
+    },
+    {
+      label: 'Settings',
+      to: '/settings',
+      icon: <AdminPanelSettingsIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchSettings,
     },
   ];
 
@@ -291,13 +300,12 @@ const AlertsTab = ({
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 4 }}>
       {/* Send Alert */}
-      <Paper elevation={4} sx={{ p: 4, borderRadius: 3 }}>
+      <Paper elevation={4} sx={{ p: 4, borderRadius: 3, overflow: 'hidden' }}> 
         <Typography variant="h5" gutterBottom fontWeight={700}>
           Send Alert
         </Typography>
         <Box component="form" onSubmit={handleSendAlert} noValidate>
           <TextField
-            
             variant="standard"
             fullWidth
             placeholder="Enter alert message"

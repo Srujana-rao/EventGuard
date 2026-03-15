@@ -30,6 +30,7 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
   const matchStaffInfo = location.pathname === '/staff-info';
   const matchMeetings = location.pathname === '/meetings';
   const matchHeadDashboard = location.pathname === '/head-dashboard';
+  const matchSettings = location.pathname === '/settings';
 
   const buttons = [
     {
@@ -55,6 +56,14 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
       showBadge: false,
       badgeContent: null,
       active: matchMeetings,
+    },
+    {
+      label: 'Settings',
+      to: '/settings',
+      icon: <AdminPanelSettingsIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchSettings,
     },
   ];
 
