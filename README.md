@@ -96,3 +96,44 @@ event-safety-frontend/
       Signup.jsx
       ForgotPassword.jsx
       ResetPassword.jsx
+```
+## How It Works
+
+1. User signs up and waits for Head approval.
+2. Approved users log in with their assigned role.
+3. Staff can send real-time alerts to other team members.
+4. Incidents can be reported and monitored through the dashboard.
+5. Head users schedule coordination meetings.
+6. Staff can monitor online team members and join meetings.
+
+## Setup Instructions
+ ### Prerequisites
+  - Node.js (LTS)
+  - npm or yarn
+  - MongoDB instance (local or MongoDB Atlas)
+
+    ### 1. Clone the Repository
+    ```
+    git clone https://github.com/Srujana-rao/EventGuard.git
+    cd TechPrep
+    ```
+    ### 2. Backend Setup
+    ```
+    cd event-safety-backend
+    npm install
+    ```
+    Create a .env file in event-safety-backend
+    ```
+    PORT=5000
+    MONGO_URI=your_mongo_url_here
+    JWT_SECRET=your_jwt_secret_here
+    SESSION_SECRET=your_session_secret_here
+    ```
+    Run backend:
+    ```
+    npm start
+    ```
+    Backend runs on:
+    ```
+    http://localhost:5000
+    ```
