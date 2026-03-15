@@ -137,3 +137,13 @@ event-safety-frontend/
     ```
     http://localhost:5000
     ```
+    ### 3. Frontend Setup
+    ```
+    cd event-safety-frontend
+    npm install
+    npm run dev
+    ```
+    Frontend runs on:
+    ```
+    http://localhost:5173
+    ```
