@@ -125,7 +125,7 @@ event-safety-frontend/
     Create a .env file in event-safety-backend
     ```
     PORT=5000
-    MONGO_URI=your_mongo_url_here
+    MONGO_URI=your_mongodb_connection_string
     JWT_SECRET=your_jwt_secret_here
     SESSION_SECRET=your_session_secret_here
     ```
