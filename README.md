@@ -115,7 +115,7 @@ event-safety-frontend/
     ### 1. Clone the Repository
     ```
     git clone https://github.com/Srujana-rao/EventGuard.git
-    cd TechPrep
+    cd EventGuard
     ```
     ### 2. Backend Setup
     ```
