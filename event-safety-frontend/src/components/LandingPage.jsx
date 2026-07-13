@@ -37,33 +37,33 @@ export default function LandingPage() {
   const features = [
     {
       icon: <Security sx={{ fontSize: 40, color: '#667eea' }} />,
-      title: 'Real-time Security',
+      title: 'Real-Time Alerts',
       description:
-        'Get instant alerts for any security incident or emergency.',
+        'Instant priority alerts with photo, video, or audio.',
     },
     {
       icon: <NotificationsActive sx={{ fontSize: 40, color: '#667eea' }} />,
-      title: 'Smart Alert System',
+      title: 'Incident Reporting',
       description:
-        'Smart AI auto-detects incidents and notifies the right people.',
+        'Log incidents with photos and location, visible instantly.',
     },
     {
       icon: <Group sx={{ fontSize: 40, color: '#667eea' }} />,
-      title: 'Team Coordination',
+      title: 'Role-Based Dashboards',
       description:
-        'Ground, room, and head staff stay instantly connected.',
+        'Tailored views per role, sign-ups need Head approval.',
     },
     {
       icon: <Speed sx={{ fontSize: 40, color: '#667eea' }} />,
-      title: 'Rapid Response',
+      title: 'Live Staff Presence',
       description:
-        'Quick reporting and instant action to ensure safety.',
+        'See who is online and available at a glance.',
     },
     {
       icon: <Shield sx={{ fontSize: 40, color: '#667eea' }} />,
-      title: 'Event Protection',
+      title: 'Meeting Scheduler ',
       description:
-        'Complete security and incident management for all events.',
+        'Schedule meetings by role, with instant notifications.',
     },
   ];
 
@@ -78,22 +78,23 @@ export default function LandingPage() {
           boxShadow: '0 2px 20px rgba(0, 0, 0, 0.1)',
         }}
       >
-        <Toolbar sx={{ py: 1 }}>
+        <Toolbar sx={{ py: 1.5 }}>
           <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-            <Security sx={{ fontSize: 32, color: '#667eea', mr: 2 }} />
+            <Security sx={{ fontSize: 50, color: '#667eea', mr: 2 }} />
             <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 700,
-                background:
-                  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              EventGuard
-            </Typography>
+  variant="h5"
+  sx={{
+    fontWeight: 700,
+    fontSize: '1.8rem',   // add this line — was relying on default h5 size (~1.5rem)
+    background:
+      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    backgroundClip: 'text',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+  }}
+>
+  EventGuard
+</Typography>
           </Box>
 
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -144,7 +145,7 @@ export default function LandingPage() {
         sx={{
           pt: 12,
           minHeight: '90vh',
-          width: '100vw',
+          width: '100%',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           display: 'flex',
           alignItems: 'center',
@@ -169,48 +170,47 @@ export default function LandingPage() {
         <Container maxWidth={false} sx={{ px: 6, position: 'relative' }}>
           <Box sx={{ maxWidth: '600px' }}>
             <Typography
-              variant="h3"
-              sx={{
-                fontWeight: 800,
-                color: 'white',
-                mb: 3,
-                fontSize: isMobile ? '2rem' : '2.8rem',
-                lineHeight: 1.2,
-                textAlign: 'left',
-                marginLeft: 3,
-              }}
-            >
-              Secure Your Events with
-              <Box
-                component="span"
-                sx={{
-                  display: 'block',
-                  background:
-                    'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                EventGuard
-              </Box>
-            </Typography>
+  variant="h3"
+  sx={{
+    fontWeight: 800,
+    color: 'white',
+    mb: 2.5,
+    fontSize: isMobile ? '2rem' : '2.8rem',
+    lineHeight: 1.15,      // tighter — was 1.3
+    textAlign: 'left',
+    marginLeft: 3,
+  }}  
+>
+  EventGuard
+  <Box
+    component="span"
+    sx={{
+      display: 'block',
+      mt: 1,               // small controlled gap instead of relying on lineHeight
+      background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
+      backgroundClip: 'text',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+    }}
+  >
+    Real-Time Coordination for Event Security Teams
+  </Box>
+</Typography>
 
-            <Typography
-              variant="h6"
-              sx={{
-                color: 'rgba(255, 255, 255, 0.9)',
-                mb: 4,
-                fontWeight: 400,
-                lineHeight: 1.6,
-                textAlign: 'left',
-                marginLeft: 3,
-              }}
-            >
-              The ultimate event security platform that combines AI-powered
-              incident detection, real-time alerts, and seamless team
-              coordination to keep your events safe and secure.
-            </Typography>
+<Typography
+  variant="h6"
+  sx={{
+    color: 'rgba(255, 255, 255, 0.9)',
+    mb: 2.5,               // same as h3's mb above
+    fontWeight: 400,
+    lineHeight: 1.4,
+    textAlign: 'left',
+    marginLeft: 3,
+  }}
+>
+  EventGuard connects Head, Room, and Ground staff during an Event with live alerts, 
+  incident reporting, and meeting scheduling — All updated in real time.
+</Typography>
 
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               <Button
@@ -330,19 +330,19 @@ export default function LandingPage() {
         </Container>
       </Box>
 
+
       {/* Features Section */}
       <Box sx={{ py: 10, backgroundColor: '#f8f9fa' }}>
         <Container maxWidth="lg">
           <Box textAlign="center" mb={6}>
             <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
-              Why Choose EventGuard?
+              Everything Your Security Team Needs
             </Typography>
             <Typography
               variant="body1"
-              sx={{ color: '#666', maxWidth: '600px', mx: 'auto' }}
+              sx={{ color: '#666', maxWidth: '700px', mx: 'auto' }}
             >
-              Our comprehensive security platform provides everything you need
-              to protect your events and ensure the safety of all attendees.
+             One dashboard to stay coordinated during an event, from the first alert to the after-action review.
             </Typography>
           </Box>
 
@@ -419,11 +419,10 @@ export default function LandingPage() {
         <Container maxWidth={false} sx={{ px: 4 }}>
           <Box textAlign="center">
             <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
-              Ready to Secure Your Next Event?
+              Ready to Coordinate Your Next Event?
             </Typography>
             <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
-              Join thousands of event organizers who trust EventGuard to keep
-              their events safe and secure.
+              Sign up today to get real-time visibility into alerts, incidents, and meetings the moment they happen.
             </Typography>
             <Button
               variant="contained"
