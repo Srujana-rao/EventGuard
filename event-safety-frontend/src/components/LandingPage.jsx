@@ -17,7 +17,8 @@ import {
   Security,
   NotificationsActive,
   Group,
-  Speed,
+ OnlinePrediction,
+  EventAvailable,
   Shield,
 } from '@mui/icons-material';
 
@@ -54,13 +55,13 @@ export default function LandingPage() {
         'Tailored views per role, sign-ups need Head approval.',
     },
     {
-      icon: <Speed sx={{ fontSize: 40, color: '#667eea' }} />,
+      icon: <OnlinePrediction sx={{ fontSize: 40, color: '#667eea' }} />,
       title: 'Live Staff Presence',
       description:
         'See who is online and available at a glance.',
     },
     {
-      icon: <Shield sx={{ fontSize: 40, color: '#667eea' }} />,
+      icon: <EventAvailable sx={{ fontSize: 40, color: '#667eea' }} />,
       title: 'Meeting Scheduler ',
       description:
         'Schedule meetings by role, with instant notifications.',
