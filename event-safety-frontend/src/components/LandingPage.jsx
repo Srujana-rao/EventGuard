@@ -209,7 +209,7 @@ export default function LandingPage() {
     marginLeft: 3,
   }}
 >
-  EventGuard connects Head, Room, and Ground staff during an Event with live alerts, 
+  EventGuard connects Head, Room, and Ground staff during an event with live alerts, 
   incident reporting, and meeting scheduling — All updated in real time.
 </Typography>
 
