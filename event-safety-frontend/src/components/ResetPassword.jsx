@@ -7,7 +7,6 @@ import {
   TextField,
   Button,
   Typography,
-  Container,
   Paper,
   Alert,
   IconButton,
@@ -19,6 +18,7 @@ import {
   Visibility,
   VisibilityOff,
   ArrowBack,
+  Security,
 } from '@mui/icons-material';
 
 export default function ResetPassword() {
@@ -31,12 +31,16 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  // Field-level validation error for password strength (frontend only)
+  const [fieldErrors, setFieldErrors] = useState({ password: '' });
   const navigate = useNavigate();
   const { token } = useParams();
 
   useEffect(() => {
     if (!token) {
       setError('Invalid reset token');
+    } else {
+      setError('');
     }
   }, [token]);
 
@@ -48,21 +52,41 @@ export default function ResetPassword() {
     }));
   };
 
+  // Password: min 10 chars, 1 uppercase, 1 lowercase, 1 special character
+  const validatePassword = (password) => {
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must include at least one uppercase letter';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Password must include at least one lowercase letter';
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=[\]\\;'/`~]/.test(password)) {
+      return 'Password must include at least one special character';
+    }
+    return '';
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
     setError('');
     setMessage('');
 
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+    // Password strength check
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      setFieldErrors({ password: passwordError });
       setLoading(false);
       return;
     }
+    setFieldErrors({ password: '' });
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    // Existing validation — unchanged
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
       setLoading(false);
       return;
     }
@@ -82,63 +106,79 @@ export default function ResetPassword() {
     }
   };
 
+  // Same shared input styling as Login.jsx / Signup.jsx
+  const inputSx = {
+    backgroundColor: '#f9fafb',
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '6px !important',
+    },
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderRadius: '6px !important',
+    },
+    '& .MuiOutlinedInput-input': {
+      border: 'none !important',
+      outline: 'none !important',
+      boxShadow: 'none !important',
+      backgroundColor: 'transparent !important',
+    },
+    '& fieldset': { borderColor: '#e5e7eb' },
+    '&:hover fieldset': { borderColor: '#667eea' },
+    '&.Mui-focused fieldset': { borderColor: '#667eea' },
+  };
+
+  // Invalid / missing token — no form, just a message + link back
   if (!token) {
     return (
       <Box
         sx={{
           minHeight: '100vh',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          backgroundColor: '#f5f7fa',
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'center',
-          py: 4,
-          px: 2,
+          alignItems: 'center',
+          p: 2,
+          fontFamily: 'Inter, Roboto, sans-serif',
         }}
       >
-        <Container maxWidth="sm">
-          <Paper
-            elevation={24}
-            sx={{
-              p: 5,
-              borderRadius: 4,
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
-            }}
-          >
-            <Alert 
-              severity="error" 
-              sx={{ 
-                mb: 4, 
-                borderRadius: 2,
-                fontSize: '0.95rem',
+        <Paper
+          elevation={8}
+          sx={{
+            maxWidth: 420,
+            width: '100%',
+            p: 4,
+            borderRadius: 1,
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+            <Security sx={{ fontSize: 34, color: '#667eea', mr: 1.5 }} />
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#333' }}>
+              EventGuard
+            </Typography>
+          </Box>
+
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 2, fontSize: '0.85rem' }}>
+            Invalid reset token
+          </Alert>
+
+          <Box textAlign="center">
+            <Link
+              href="/login"
+              sx={{
+                color: '#667eea',
+                textDecoration: 'none',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                '&:hover': { textDecoration: 'underline' },
               }}
             >
-              Invalid reset token
-            </Alert>
-            <Box textAlign="center">
-              <Link
-                href="/login"
-                sx={{
-                  color: '#667eea',
-                  textDecoration: 'none',
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  '&:hover': {
-                    color: '#764ba2',
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                <ArrowBack sx={{ mr: 1, fontSize: '1.2rem' }} />
-                Back to Login
-              </Link>
-            </Box>
-          </Paper>
-        </Container>
+              <ArrowBack sx={{ mr: 1, fontSize: '1.1rem' }} />
+              Back to Login
+            </Link>
+          </Box>
+        </Paper>
       </Box>
     );
   }
@@ -147,190 +187,237 @@ export default function ResetPassword() {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        backgroundColor: '#f5f7fa',
         display: 'flex',
-        alignItems: 'center',
         justifyContent: 'center',
-        py: 4,
-        px: 2,
-        borderRadius: 5
+        alignItems: 'center',
+        p: 2,
+        fontFamily: 'Inter, Roboto, sans-serif',
       }}
     >
-      <Container maxWidth="sm">
-        <Paper
-          elevation={24}
+      <Paper
+        elevation={8}
+        sx={{
+          maxWidth: 950,
+          width: '100%',
+          display: 'flex',
+          borderRadius: 1,
+          overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+        }}
+      >
+        {/* Left Side - Branding */}
+        <Box
           sx={{
-            p: 5,
-            borderRadius: 4,
-           
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+            flex: 1,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            position: 'relative',
+            color: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            p: 4,
+            minHeight: 480,
           }}
         >
-          {/* Header */}
-          <Box textAlign="center" mb={4}>
+          <Box sx={{ borderRadius: 3, p: 3, textAlign: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+              <Security sx={{ fontSize: 34, color: '#ffd700', mr: 1.5 }} />
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                EventGuard
+              </Typography>
+            </Box>
+
             <Typography
-              component="h1"
-              variant="h3"
+              variant="body2"
               sx={{
-                fontWeight: 800,
-                mb: 2,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textShadow: 'none',
-              }}
-            >
-              Set New Password
-            </Typography>
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                color: 'text.secondary',
-                fontSize: '1.1rem',
-                fontWeight: 500,
-              }}
-            >
-              Enter your new password below
-            </Typography>
-          </Box>
-
-          {/* Success/Error Alerts */}
-          {message && (
-            <Alert 
-              severity="success" 
-              sx={{ 
-                mb: 4, 
-                borderRadius: 2,
-                fontSize: '0.95rem',
-              }}
-            >
-              {message}
-            </Alert>
-          )}
-          
-          {error && (
-            <Alert 
-              severity="error" 
-              sx={{ 
-                mb: 4, 
-                borderRadius: 2,
-                fontSize: '0.95rem',
-              }}
-            >
-              {error}
-            </Alert>
-          )}
-
-          {/* Reset Form */}
-          <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
-            <TextField
-              id="standard-basic"
-              label="New Password"
-              variant="standard"
-              fullWidth
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              InputLabelProps={{
-    shrink: true,
-    sx: {
-      backgroundColor: 'white',
-      px: 0.5,
-      position: 'relative',
-      zIndex: 1,
-      '&.MuiInputLabel-shrink': {
-        transform: 'translate(0, 20px) scale(1)',
-      },
-    },
-  }}
- 
-            />
-
-            <TextField
-              id="standard-basic"
-              label="Confirm New Password"
-              variant="standard"
-              fullWidth
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              InputLabelProps={{
-    shrink: true,
-    sx: {
-      backgroundColor: 'white',
-      px: 0.5,
-      position: 'relative',
-      zIndex: 1,
-      '&.MuiInputLabel-shrink': {
-        transform: 'translate(0, 20px) scale(1)',
-      },
-    },
-  }}
-            />
-
-            {/* Reset Button */}
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={loading}
-              sx={{
-                py: 2,
-                borderRadius: 3,
-                marginTop: 3,
-                fontSize: '1.1rem',
-                fontWeight: 700,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                border: 'none',
-                boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                  boxShadow: '0 12px 35px rgba(102, 126, 234, 0.4)',
-                  transform: 'translateY(-2px)',
-                },
-                '&:disabled': {
-                  background: 'linear-gradient(135deg, #b8c2f0 0%, #c4b5d9 100%)',
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  transform: 'none',
-                },
-                transition: 'all 0.3s ease',
-              }}
-            >
-              {loading ? 'Resetting...' : 'Reset Password'}
-        </Button>
-          </Box>
-
-          {/* Back to Login Link */}
-          <Box textAlign="center">
-            <Link
-              href="/login"
-              sx={{
-                color: '#667eea',
-                textDecoration: 'none',
+                opacity: 0.9,
                 fontSize: '1rem',
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                '&:hover': {
-                  color: '#764ba2',
-                  textDecoration: 'underline',
-                },
+                lineHeight: 1.5,
               }}
             >
-              <ArrowBack sx={{ mr: 1, fontSize: '1.2rem' }} />
-              Back to Login
-            </Link>
+              Choose a new password to secure your account and get back to managing your events.
+            </Typography>
           </Box>
-        </Paper>
-      </Container>
+        </Box>
+
+        {/* Right Side - Reset Form */}
+        <Box
+          sx={{
+            flex: 1,
+            backgroundColor: 'white',
+            p: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            minHeight: 480,
+          }}
+        >
+          <Box sx={{ maxWidth: 380, width: '100%', mx: 'auto' }}>
+            <Box sx={{ mb: 2.5 }}>
+              <Typography
+                variant="h5"
+                component="h1"
+                sx={{ fontWeight: 700, color: '#333', mb: 0.5 }}
+              >
+                Set New Password
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#666', fontSize: '0.9rem' }}>
+                Enter your new password below
+              </Typography>
+            </Box>
+
+            {message && (
+              <Alert severity="success" sx={{ mb: 2, borderRadius: 2, fontSize: '0.85rem' }}>
+                {message}
+              </Alert>
+            )}
+
+            {error && (
+              <Alert severity="error" sx={{ mb: 2, borderRadius: 2, fontSize: '0.85rem' }}>
+                {error}
+              </Alert>
+            )}
+
+            <Box component="form" onSubmit={handleSubmit} noValidate>
+              {/* New Password */}
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: '#333', mb: 0.5, fontSize: '0.85rem' }}
+              >
+                New Password
+              </Typography>
+              <TextField
+                variant="outlined"
+                required
+                fullWidth
+                size="small"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                autoComplete="new-password"
+                placeholder="Enter new password"
+                error={!!fieldErrors.password}
+                helperText={
+                  fieldErrors.password ||
+                  'Min 8 characters, with uppercase, lowercase, and a special character'
+                }
+                sx={{ mb: fieldErrors.password ? 0.5 : 2 }}
+                FormHelperTextProps={{ sx: { fontSize: '0.7rem', mx: 0 } }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock sx={{ color: '#9ca3af', fontSize: 18 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={() => setShowPassword((show) => !show)}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                  sx: inputSx,
+                }}
+              />
+
+              {/* Confirm New Password */}
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: '#333', mb: 0.5, fontSize: '0.85rem' }}
+              >
+                Confirm New Password
+              </Typography>
+              <TextField
+                variant="outlined"
+                required
+                fullWidth
+                size="small"
+                type={showConfirmPassword ? 'text' : 'password'}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                autoComplete="new-password"
+                placeholder="Re-enter new password"
+                sx={{ mb: 2.5 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock sx={{ color: '#9ca3af', fontSize: 18 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle confirm password visibility"
+                        onClick={() => setShowConfirmPassword((show) => !show)}
+                        edge="end"
+                        size="small"
+                      >
+                        {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                  sx: inputSx,
+                }}
+              />
+
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                disabled={loading}
+                sx={{
+                  py: 1.1,
+                  borderRadius: 1,
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  backgroundColor: '#667eea',
+                  color: 'white',
+                  mb: 2,
+                  '&:hover': { backgroundColor: '#5a6fd8' },
+                  '&:disabled': { backgroundColor: '#b8c2f0' },
+                }}
+              >
+                {loading ? 'Resetting...' : 'Reset Password'}
+              </Button>
+            </Box>
+
+            <Box textAlign="center">
+              <Link
+                href="/login"
+                sx={{
+                  color: '#667eea',
+                  textDecoration: 'none',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                <ArrowBack sx={{ mr: 0.5, fontSize: '1rem' }} />
+                Back to Login
+              </Link>
+            </Box>
+          </Box>
+        </Box>
+      </Paper>
     </Box>
   );
 }

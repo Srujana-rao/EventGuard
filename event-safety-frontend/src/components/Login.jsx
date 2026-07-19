@@ -208,7 +208,7 @@ export default function Login({ setAuth }) {
                 lineHeight: 1.6,
               }}
             >
-              Sign in to continue managing your events safely and efficiently with EventGuard.
+              Sign in to continue managing event security with EventGuard.
             </Typography>
           </Box>
         </Box>

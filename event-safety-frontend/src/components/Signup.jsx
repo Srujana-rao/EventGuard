@@ -87,8 +87,8 @@ export default function Signup({ setAuth }) {
 
   // Password: min 10 chars, 1 uppercase, 1 lowercase, 1 special character
   const validatePassword = (password) => {
-    if (password.length < 10) {
-      return 'Password must be at least 10 characters';
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters';
     }
     if (!/[A-Z]/.test(password)) {
       return 'Password must include at least one uppercase letter';
@@ -350,7 +350,7 @@ export default function Signup({ setAuth }) {
                 error={!!fieldErrors.password}
                 helperText={
                   fieldErrors.password ||
-                  'Min 10 characters, with uppercase, lowercase, and a special character'
+                  'Min 8 characters, with uppercase, lowercase, and a special character'
                 }
                 sx={{ mb: fieldErrors.password ? 0.5 : 2 }}
                 FormHelperTextProps={{ sx: { fontSize: '0.7rem', mx: 0 } }}

@@ -7,16 +7,15 @@ import {
   TextField,
   Button,
   Typography,
-  Container,
   Paper,
   Alert,
-  IconButton,
   InputAdornment,
   Link,
 } from '@mui/material';
 import {
   Email,
   ArrowBack,
+  Security,
 } from '@mui/icons-material';
 
 export default function ForgotPassword() {
@@ -44,169 +43,201 @@ export default function ForgotPassword() {
     }
   };
 
+  // Same shared input styling as Login.jsx / Signup.jsx
+  const inputSx = {
+    backgroundColor: '#f9fafb',
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '6px !important',
+    },
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderRadius: '6px !important',
+    },
+    '& .MuiOutlinedInput-input': {
+      border: 'none !important',
+      outline: 'none !important',
+      boxShadow: 'none !important',
+      backgroundColor: 'transparent !important',
+    },
+    '& fieldset': { borderColor: '#e5e7eb' },
+    '&:hover fieldset': { borderColor: '#667eea' },
+    '&.Mui-focused fieldset': { borderColor: '#667eea' },
+  };
+
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        backgroundColor: '#f5f7fa',
         display: 'flex',
-        alignItems: 'center',
         justifyContent: 'center',
-        py: 4,
-        px: 2,
-        borderRadius: 5
+        alignItems: 'center',
+        p: 2,
+        fontFamily: 'Inter, Roboto, sans-serif',
       }}
     >
-      <Container maxWidth="sm">
-        <Paper
-          elevation={24}
+      <Paper
+        elevation={8}
+        sx={{
+          maxWidth: 950,
+          width: '100%',
+          display: 'flex',
+          borderRadius: 1,
+          overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+        }}
+      >
+        {/* Left Side - Branding */}
+        <Box
           sx={{
-            p: 5,
-            borderRadius: 4,
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+            flex: 1,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            position: 'relative',
+            color: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            p: 4,
+            minHeight: 480,
           }}
         >
-          {/* Header */}
-          <Box textAlign="center" mb={4}>
+          <Box sx={{ borderRadius: 3, p: 3, textAlign: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+              <Security sx={{ fontSize: 34, color: '#ffd700', mr: 1.5 }} />
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                EventGuard
+              </Typography>
+            </Box>
+
             <Typography
-              component="h1"
-              variant="h3"
+              variant="body2"
               sx={{
-                fontWeight: 800,
-                mb: 2,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textShadow: 'none',
-              }}
-            >
-              Reset Password
-            </Typography>
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                color: 'text.secondary',
-                fontSize: '1.1rem',
-                fontWeight: 500,
-              }}
-            >
-              Enter your email to receive a password reset link
-            </Typography>
-          </Box>
-
-          {/* Success/Error Alerts */}
-          {message && (
-            <Alert 
-              severity="success" 
-              sx={{ 
-                mb: 4, 
-                borderRadius: 2,
-                fontSize: '0.95rem',
-              }}
-            >
-              {message}
-            </Alert>
-          )}
-          
-          {error && (
-            <Alert 
-              severity="error" 
-              sx={{ 
-                mb: 4, 
-                borderRadius: 2,
-                fontSize: '0.95rem',
-              }}
-            >
-              {error}
-            </Alert>
-          )}
-
-          {/* Reset Form */}
-          <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
-            <TextField
-              id="standard-basic"
-              label="Email Address"
-              variant="standard"
-              fullWidth
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              InputLabelProps={{
-    shrink: true,
-    sx: {
-      backgroundColor: 'white',
-      px: 0.5,
-      position: 'relative',
-      zIndex: 1,
-      '&.MuiInputLabel-shrink': {
-        transform: 'translate(0, 20px) scale(1)',
-      },
-    },
-  }}
-            />
-
-            {/* Reset Button */}
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={loading}
-              sx={{
-                py: 1,
-                marginTop: 3,
-                borderRadius: 3,
-                fontSize: '1.1rem',
-                fontWeight: 700,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                border: 'none',
-                boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                  boxShadow: '0 12px 35px rgba(102, 126, 234, 0.4)',
-                  transform: 'translateY(-2px)',
-                },
-                '&:disabled': {
-                  background: 'linear-gradient(135deg, #b8c2f0 0%, #c4b5d9 100%)',
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  transform: 'none',
-                },
-                transition: 'all 0.3s ease',
-              }}
-            >
-              {loading ? 'Sending...' : 'Send Reset Link'}
-            </Button>
-          </Box>
-
-          {/* Back to Login Link */}
-          <Box textAlign="center">
-            <Link
-              href="/login"
-              sx={{
-                color: '#667eea',
-                textDecoration: 'none',
+                opacity: 0.9,
                 fontSize: '1rem',
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                '&:hover': {
-                  color: '#764ba2',
-                  textDecoration: 'underline',
-                },
+                lineHeight: 1.5,
               }}
             >
-              <ArrowBack sx={{ mr: 1, fontSize: '1.2rem' }} />
-              Back to Login
-            </Link>
+              No worries — enter your email and we'll send you a link to get back into your account.
+            </Typography>
           </Box>
-        </Paper>
-      </Container>
+        </Box>
+
+        {/* Right Side - Forgot Password Form */}
+        <Box
+          sx={{
+            flex: 1,
+            backgroundColor: 'white',
+            p: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            minHeight: 480,
+          }}
+        >
+          <Box sx={{ maxWidth: 380, width: '100%', mx: 'auto' }}>
+            <Box sx={{ mb: 2.5 }}>
+              <Typography
+                variant="h5"
+                component="h1"
+                sx={{ fontWeight: 700, color: '#333', mb: 0.5 }}
+              >
+                Forgot Password?
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#666', fontSize: '0.9rem' }}>
+                Enter your email to receive a password reset link
+              </Typography>
+            </Box>
+
+            {message && (
+              <Alert severity="success" sx={{ mb: 2, borderRadius: 2, fontSize: '0.85rem' }}>
+                {message}
+              </Alert>
+            )}
+
+            {error && (
+              <Alert severity="error" sx={{ mb: 2, borderRadius: 2, fontSize: '0.85rem' }}>
+                {error}
+              </Alert>
+            )}
+
+            <Box component="form" onSubmit={handleSubmit} noValidate>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: '#333', mb: 0.5, fontSize: '0.85rem' }}
+              >
+                Email
+              </Typography>
+              <TextField
+                variant="outlined"
+                required
+                fullWidth
+                size="small"
+                type="email"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                placeholder="Enter your email"
+                sx={{ mb: 2.5 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Email sx={{ color: '#9ca3af', fontSize: 18 }} />
+                    </InputAdornment>
+                  ),
+                  sx: inputSx,
+                }}
+              />
+
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                disabled={loading}
+                sx={{
+                  py: 1.1,
+                  borderRadius: 1,
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  backgroundColor: '#667eea',
+                  color: 'white',
+                  mb: 2,
+                  '&:hover': { backgroundColor: '#5a6fd8' },
+                  '&:disabled': { backgroundColor: '#b8c2f0' },
+                }}
+              >
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </Button>
+            </Box>
+
+            <Box textAlign="center">
+              <Link
+                href="/login"
+                sx={{
+                  color: '#667eea',
+                  textDecoration: 'none',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                <ArrowBack sx={{ mr: 0.5, fontSize: '1rem' }} />
+                Back to Login
+              </Link>
+            </Box>
+          </Box>
+        </Box>
+      </Paper>
     </Box>
   );
 }
