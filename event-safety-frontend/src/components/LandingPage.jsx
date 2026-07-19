@@ -331,17 +331,63 @@ export default function LandingPage() {
         </Container>
       </Box>
 
+{/* Stats Strip */}
+      <Box
+  sx={{
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: '-5px', 
+    py: 3.5,
+    pb: 3,
+    px: { xs: 3, md: 6 },
+    backgroundColor: '#f8f9fa',
+    zIndex: 3,
+    borderBottom: '1px solid #e5e7eb',
+  }}
+>
+        <Grid container spacing={15} justifyContent="center" textAlign="center">
+          {[
+            { number: '50+', label: 'Events Secured' },
+            { number: '24/7', label: 'Live Monitoring' },
+            { number: '99.9%', label: 'Uptime' },
+            { number: '100+', label: 'Security Staff Onboarded' },
+          ].map((stat, i) => (
+            <Grid item xs={6} sm={3} key={i}>
+              <Typography
+                sx={{
+                  fontWeight: 800,
+                  fontSize: '1.4rem',
+                  color: '#667eea',
+                  lineHeight: 1.2,
+                }}
+              >
+                {stat.number}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: '0.8rem',
+                  color: '#666',
+                  fontWeight: 500,
+                }}
+              >
+                {stat.label}
+              </Typography>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
 
       {/* Features Section */}
-      <Box sx={{ py: 10, backgroundColor: '#f8f9fa' }}>
+      <Box sx={{ py: 10, mt: 5, backgroundColor: '#f8f9fa' }}>
         <Container maxWidth="lg">
           <Box textAlign="center" mb={6}>
-            <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
+            <Typography variant="h4" sx={{color: '#667eea', fontWeight: 700, mb: 2 }}>
               Everything Your Security Team Needs
             </Typography>
             <Typography
               variant="body1"
-              sx={{ color: '#666', maxWidth: '700px', mx: 'auto' }}
+              sx={{ color: '#030000', maxWidth: '700px', mx: 'auto' }}
             >
              One dashboard to stay coordinated during an event, from the first alert to the after-action review.
             </Typography>
