@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { io } from 'socket.io-client'; // Socket.IO client import
 import './App.css'; // Main CSS
 import LandingPage from './components/LandingPage';
 import Signup from './components/Signup';
@@ -20,16 +19,9 @@ import Settings from './components/Settings';
 import { socket } from './socket';
 
 function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
-  const [backendMessage, setBackendMessage] = useState('');
-  const [incidents, setIncidents] = useState([]);
-  const [newIncidentType, setNewIncidentType] = useState('');
-  const [newIncidentLocation, setNewIncidentLocation] = useState('');
-  const [newIncidentMediaFile, setNewIncidentMediaFile] = useState(null);
-  const [loadingIncidents, setLoadingIncidents] = useState(true);
-  const [incidentsError, setIncidentsError] = useState(null);
-
   const [realtimeAlerts, setRealtimeAlerts] = useState([]);
   const [meetingNotificationCount, setMeetingNotificationCount] = useState(0);
+  const [approvalsPending, setApprovalsPending] = useState(0);
 
   // Alert Composer State
   const [alertMessage, setAlertMessage] = useState('');
@@ -40,11 +32,8 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
   const [alertPriority, setAlertPriority] = useState('info'); // 'urgent', 'important', 'info'
   const [alertLocationTag, setAlertLocationTag] = useState('');
 
-  // (AI Image Analysis removed)
-
   // React Refs for File Inputs
   const alertMediaInputRef = useRef(null);
-  const incidentMediaInputRef = useRef(null);
 
   const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -54,32 +43,20 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
     window.location.href = '/';
   };
 
-  /// Socket.IO Authentication & Event Listeners
+  /// Socket.IO event listeners for the main dashboard (connection is managed in App)
 
   useEffect(() => {
     const token = localStorage.getItem('token');
 
-    // Only disconnect if absolutely no token
-    if (!token) {
-      if (socket.connected) {
-        console.log('No token found, disconnecting socket...');
-        socket.disconnect();
-      }
-      return;
+    if (!token || !isAuthenticated) {
+      return undefined;
     }
-
-    const handleConnect = () => {
-      console.log('Connected to Socket.IO backend!');
-      console.log('Authenticating socket...');
-      socket.emit('authenticate', token);
-    };
 
     const handleAuthenticated = ({ status, user }) => {
       if (status) {
         console.log(`Socket authenticated for user: ${user.username} (${user.role})`);
       } else {
         console.error('Socket authentication failed!');
-        handleSetAuth(false);
       }
     };
 
@@ -88,14 +65,6 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
         if (prev.find((a) => a._id === alertData._id)) return prev;
         return [...prev, alertData];
       });
-    };
-
-    const handleNewIncident = () => {
-      fetchIncidents();
-    };
-
-    const handleIncidentDeleted = (incidentId) => {
-      setIncidents((prev) => prev.filter((inc) => inc._id !== incidentId));
     };
 
     const handleNewMeeting = (meeting) => {
@@ -114,33 +83,25 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
       console.log('Disconnected from Socket.IO backend!');
     };
 
-    // attach listeners
-    socket.on('connect', handleConnect);
     socket.on('authenticated', handleAuthenticated);
     socket.on('receive-alert', handleReceiveAlert);
-    socket.on('new-incident', handleNewIncident);
-    socket.on('incident-deleted', handleIncidentDeleted);
     socket.on('new-meeting', handleNewMeeting);
     socket.on('meeting-deleted', handleMeetingDeleted);
     socket.on('disconnect', handleDisconnect);
 
-    // connect socket AFTER listeners
-    if (!socket.connected) {
-      console.log('Connecting socket...');
-      socket.connect();
+    // Ensure socket is authenticated while viewing the dashboard
+    if (socket.connected) {
+      socket.emit('authenticate', token);
     }
 
     return () => {
-      socket.off('connect', handleConnect);
       socket.off('authenticated', handleAuthenticated);
       socket.off('receive-alert', handleReceiveAlert);
-      socket.off('new-incident', handleNewIncident);
-      socket.off('incident-deleted', handleIncidentDeleted);
       socket.off('new-meeting', handleNewMeeting);
       socket.off('meeting-deleted', handleMeetingDeleted);
       socket.off('disconnect', handleDisconnect);
     };
-  }, [isAuthenticated, handleSetAuth, username]);
+  }, [isAuthenticated, username]);
 
   // Send Alert Handler
   const handleSendAlert = async (e) => {
@@ -201,92 +162,48 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
     }
   };
 
-  // Backend status fetching
+  // Sidebar badge counts
   useEffect(() => {
-    axios.get('http://localhost:5000/')
-      .then((response) => setBackendMessage(response.data))
-      .catch(() => setBackendMessage('Failed to connect to backend.'));
-  }, []);
+    if (!isAuthenticated) return undefined;
 
-  // Incident fetching
-  const fetchIncidents = async () => {
-    setLoadingIncidents(true);
-    setIncidentsError(null);
-    try {
-      const token = localStorage.getItem('token');
-      const config = token ? { headers: { 'x-auth-token': token } } : {};
-      const res = await axios.get(`${API_BASE_URL}/incidents`, config);
-      setIncidents(res.data);
-    } catch {
-      setIncidentsError('Failed to load incidents. Please try again.');
-    } finally {
-      setLoadingIncidents(false);
-    }
-  };
+    let isMounted = true;
+    const token = localStorage.getItem('token');
+    const config = token ? { headers: { 'x-auth-token': token } } : {};
 
-  useEffect(() => {
-    if (isAuthenticated) fetchIncidents();
-  }, [isAuthenticated]);
-
-  // Add Incident Handler
-  const handleAddIncident = async (e) => {
-    e.preventDefault();
-    setIncidentsError(null);
-
-    let imageUrl = null;
-    if (newIncidentMediaFile) {
+    const loadBadgeCounts = async () => {
       try {
-        const formData = new FormData();
-        formData.append('alertMedia', newIncidentMediaFile);
-
-        const uploadRes = await axios.post(`${API_BASE_URL}/alert-media-upload`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-
-        imageUrl = `http://localhost:5000${uploadRes.data.mediaUrl}`;
-      } catch (err) {
-        setIncidentsError(`Failed to upload incident media: ${err.response?.data?.message || err.message}`);
-        return;
+        const meetingsRes = await axios.get(`${API_BASE_URL}/meetings`, config);
+        if (isMounted) {
+          const now = Date.now();
+          const upcoming = (meetingsRes.data || []).filter(
+            (m) => new Date(m.meetingTime).getTime() >= now
+          );
+          setMeetingNotificationCount(upcoming.length);
+        }
+      } catch {
+        // non-critical
       }
-    }
 
-    try {
-      const token = localStorage.getItem('token');
-      const config = token ? { headers: { 'x-auth-token': token } } : {};
-      await axios.post(
-        `${API_BASE_URL}/incidents`,
-        {
-          type: newIncidentType,
-          location: newIncidentLocation,
-          imageUrl,
-        },
-        config,
-      );
-      setNewIncidentType('');
-      setNewIncidentLocation('');
-      setNewIncidentMediaFile(null);
-      if (incidentMediaInputRef.current) incidentMediaInputRef.current.value = '';
-    } catch {
-      setIncidentsError('Failed to add incident. Please try again.');
-    }
-  };
+      if (userRole === 'head') {
+        try {
+          const summaryRes = await axios.get(`${API_BASE_URL}/auth/pending-summary`, config);
+          if (isMounted) {
+            setApprovalsPending(summaryRes.data?.total || 0);
+          }
+        } catch {
+          // non-critical
+        }
+      }
+    };
 
-  // Delete Incident Handler
-  const handleDeleteIncident = async (incidentId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = token ? { headers: { 'x-auth-token': token } } : {};
-      await axios.delete(`${API_BASE_URL}/incidents/${incidentId}`, config);
-    } catch {
-      setIncidentsError('Failed to delete incident. Please try again.');
-    }
-  };
-
-  // (AI image analysis UI and effects removed)
+    loadBadgeCounts();
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, userRole]);
 
   return (
     <Dashboard
-      backendMessage={backendMessage}
       username={username}
       userRole={userRole}
       handleLogout={handleLogout}
@@ -304,31 +221,38 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
       setAlertLocationTag={setAlertLocationTag}
       handleSendAlert={handleSendAlert}
       realtimeAlerts={realtimeAlerts}
-      newIncidentType={newIncidentType}
-      setNewIncidentType={setNewIncidentType}
-      newIncidentLocation={newIncidentLocation}
-      setNewIncidentLocation={setNewIncidentLocation}
-      newIncidentMediaFile={newIncidentMediaFile}
-      setNewIncidentMediaFile={setNewIncidentMediaFile}
-      incidents={incidents}
-      loadingIncidents={loadingIncidents}
-      incidentsError={incidentsError}
-      fetchIncidents={fetchIncidents}
-      handleAddIncident={handleAddIncident}
-      handleDeleteIncident={handleDeleteIncident}
-      /* AI image analysis feature removed */
       alertMediaInputRef={alertMediaInputRef}
-      incidentMediaInputRef={incidentMediaInputRef}
+      approvalsPending={approvalsPending}
       meetingNotificationCount={meetingNotificationCount}
     />
   );
 }
 
 // Main App component for Routing
+function getStoredAuth() {
+  try {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    if (!token || !user) {
+      return { isAuthenticated: false, userRole: null, username: null };
+    }
+    const parsedUser = JSON.parse(user);
+    axios.defaults.headers.common['x-auth-token'] = token;
+    return {
+      isAuthenticated: true,
+      userRole: parsedUser.role || null,
+      username: parsedUser.username || null,
+    };
+  } catch {
+    return { isAuthenticated: false, userRole: null, username: null };
+  }
+}
+
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState(null);
-  const [username, setUsername] = useState(null);
+  const initialAuth = getStoredAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState(initialAuth.isAuthenticated);
+  const [userRole, setUserRole] = useState(initialAuth.userRole);
+  const [username, setUsername] = useState(initialAuth.username);
 
   const handleSetAuth = (status) => {
     setIsAuthenticated(status);
@@ -359,27 +283,41 @@ function App() {
     }
   };
 
-useEffect(() => {
+  useEffect(() => {
+    const stored = getStoredAuth();
+    setIsAuthenticated(stored.isAuthenticated);
+    setUserRole(stored.userRole);
+    setUsername(stored.username);
+  }, []);
 
-  const token = localStorage.getItem("token");
-  const user = localStorage.getItem("user");
+  // Keep socket connected/authenticated on every protected page (not only /dashboard)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      if (socket.connected) {
+        socket.disconnect();
+      }
+      return undefined;
+    }
 
-  if (token && user) {
+    const token = localStorage.getItem('token');
+    if (!token) return undefined;
 
-    const parsedUser = JSON.parse(user);
+    const handleConnect = () => {
+      socket.emit('authenticate', token);
+    };
 
-    setIsAuthenticated(true);
-    setUserRole(parsedUser.role);
-    setUsername(parsedUser.username);
+    socket.on('connect', handleConnect);
 
-    axios.defaults.headers.common["x-auth-token"] = token;
+    if (!socket.connected) {
+      socket.connect();
+    } else {
+      socket.emit('authenticate', token);
+    }
 
-  } else {
-
-    setIsAuthenticated(false);
-  }
-
-}, []);
+    return () => {
+      socket.off('connect', handleConnect);
+    };
+  }, [isAuthenticated]);
 
   return (
     <Router>
@@ -394,12 +332,14 @@ useEffect(() => {
         <Route
           path="/head-dashboard"
           element={
-            userRole === 'head' ? (
+            !isAuthenticated ? (
+              <Navigate to="/login" replace />
+            ) : userRole === 'head' ? (
               <DashboardShell title="User Approvals">
                 <HeadDashboard userRole={userRole} />
               </DashboardShell>
             ) : (
-              <Navigate to="/" />
+              <Navigate to="/dashboard" replace />
             )
           }
         />
@@ -414,7 +354,7 @@ useEffect(() => {
                 handleSetAuth={handleSetAuth}
               />
             ) : (
-              <Navigate to="/" />
+              <Navigate to="/login" replace />
             )
           }
         />
@@ -426,7 +366,7 @@ useEffect(() => {
                 <StaffInfo />
               </DashboardShell>
             ) : (
-              <Navigate to="/dashboard" />
+              <Navigate to="/login" replace />
             )
           }
         />
@@ -438,7 +378,7 @@ useEffect(() => {
                 <Meetings userRole={userRole} />
               </DashboardShell>
             ) : (
-              <Navigate to="/dashboard" />
+              <Navigate to="/login" replace />
             )
           }
         />
@@ -450,13 +390,19 @@ useEffect(() => {
                 <Settings />
               </DashboardShell>
             ) : (
-              <Navigate to="/dashboard" />
+              <Navigate to="/login" replace />
             )
           }
         />
         <Route
           path="/*"
-           element={isAuthenticated ? <Navigate to="/dashboard" /> : <Navigate to="/" />}
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
         />
       </Routes>
     </Router>

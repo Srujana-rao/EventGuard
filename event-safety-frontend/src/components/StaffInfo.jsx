@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Box, Paper, Typography, Chip, TextField, Button, InputAdornment } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import { socket } from '../socket';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -12,33 +13,38 @@ export default function StaffInfo() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [search, setSearch] = useState('');
 
+  const fetchUsers = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true);
+    try {
+      const res = await axios.get(`${API_BASE_URL}/users`);
+      setUsers(res.data || []);
+      setError(null);
+    } catch {
+      setError('Failed to load staff information.');
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    let isMounted = true;
+    fetchUsers(true);
 
-    const fetchUsers = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/users`);
-        if (isMounted) {
-          setUsers(res.data || []);
-          setError(null);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError('Failed to load staff information.');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
+    // Refresh when someone logs in/out via socket presence
+    const handlePresenceUpdated = () => {
+      fetchUsers(false);
     };
+    socket.on('presence-updated', handlePresenceUpdated);
 
-    fetchUsers();
+    // Light polling as a fallback if a socket event is missed
+    const intervalId = setInterval(() => {
+      fetchUsers(false);
+    }, 8000);
 
     return () => {
-      isMounted = false;
+      socket.off('presence-updated', handlePresenceUpdated);
+      clearInterval(intervalId);
     };
-  }, []);
+  }, [fetchUsers]);
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {

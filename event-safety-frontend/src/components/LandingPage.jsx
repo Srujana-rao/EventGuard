@@ -43,12 +43,6 @@ export default function LandingPage() {
         'Instant priority alerts with photo, video, or audio.',
     },
     {
-      icon: <NotificationsActive sx={{ fontSize: 40, color: '#667eea' }} />,
-      title: 'Incident Reporting',
-      description:
-        'Log incidents with photos and location, visible instantly.',
-    },
-    {
       icon: <Group sx={{ fontSize: 40, color: '#667eea' }} />,
       title: 'Role-Based Dashboards',
       description:
@@ -209,8 +203,7 @@ export default function LandingPage() {
     marginLeft: 3,
   }}
 >
-  EventGuard connects Head, Room, and Ground staff during an event with live alerts, 
-  incident reporting, and meeting scheduling — All updated in real time.
+  EventGuard connects Head, Room, and Ground staff during an event with live alerts and meeting scheduling — All updated in real time.
 </Typography>
 
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
@@ -469,7 +462,7 @@ export default function LandingPage() {
               Ready to Coordinate Your Next Event?
             </Typography>
             <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
-              Sign up today to get real-time visibility into alerts, incidents, and meetings the moment they happen.
+              Sign up today to get real-time visibility into alerts and meetings the moment they happen.
             </Typography>
             <Button
               variant="contained"

@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import {
   Box,
   Typography,
@@ -16,7 +17,6 @@ import {
   Badge,
 } from '@mui/material';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import GroupsIcon from '@mui/icons-material/Groups';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -30,11 +30,18 @@ const sidebarGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)';
 const topBarBg = '#ffffff';
 const topBarTextColor = '#333';
 const sidebarWidth = 220;
+const API_BASE_URL = 'http://localhost:5000/api';
 
-function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, onLogout }) {
+function SidebarMenu({
+  userRole,
+  approvalsPending,
+  meetingsPending,
+  mobileOpen,
+  onDrawerToggle,
+  onLogout,
+}) {
   const location = useLocation();
   const matchDashboard = location.pathname === '/dashboard';
-  const matchIncidents = location.pathname === '/incidents';
   const matchStaffInfo = location.pathname === '/staff-info';
   const matchMeetings = location.pathname === '/meetings';
   const matchHeadDashboard = location.pathname === '/head-dashboard';
@@ -50,14 +57,6 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
       active: matchDashboard,
     },
     {
-      label: 'Report Incident',
-      to: '/incidents',
-      icon: <AddCircleOutlineIcon />,
-      showBadge: false,
-      badgeContent: null,
-      active: matchIncidents,
-    },
-    {
       label: 'Staff Info',
       to: '/staff-info',
       icon: <GroupsIcon />,
@@ -69,8 +68,8 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
       label: 'Meetings',
       to: '/meetings',
       icon: <EventNoteIcon />,
-      showBadge: false,
-      badgeContent: null,
+      showBadge: meetingsPending > 0,
+      badgeContent: meetingsPending,
       active: matchMeetings,
     },
     {
@@ -88,7 +87,7 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
       label: 'User Approvals',
       to: '/head-dashboard',
       icon: <AdminPanelSettingsIcon />,
-      showBadge: true,
+      showBadge: approvalsPending > 0,
       badgeContent: approvalsPending,
       active: matchHeadDashboard,
     });
@@ -129,7 +128,22 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
                 <ListItemIcon sx={{ color: 'white' }}>{icon}</ListItemIcon>
                 <ListItemText primary={label} />
                 {showBadge && badgeContent > 0 && (
-                  <Badge badgeContent={badgeContent} color="error" max={99} sx={{ mr: 3 }} />
+                  <Badge
+                    badgeContent={badgeContent}
+                    max={99}
+                    sx={{
+                      mr: 2,
+                      '& .MuiBadge-badge': {
+                        bgcolor: '#ffffff',
+                        color: '#667eea',
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        minWidth: 18,
+                        height: 18,
+                        px: 0.5,
+                      },
+                    }}
+                  />
                 )}
               </ListItemButton>
             </ListItem>
@@ -140,7 +154,12 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
               variant="contained"
               onClick={onLogout}
               fullWidth
-              sx={{ fontWeight: 700, bgcolor: 'rgba(255,255,255,0.15)', color: 'white', ':hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}
+              sx={{
+                fontWeight: 700,
+                bgcolor: 'rgba(255,255,255,0.15)',
+                color: 'white',
+                ':hover': { bgcolor: 'rgba(255,255,255,0.25)' },
+              }}
               aria-label="Logout"
             >
               Logout
@@ -193,7 +212,7 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
               sx={{
                 justifyContent: 'flex-start',
                 fontWeight: 600,
-                fontSize: 16,
+                fontSize: 15,
                 textTransform: 'none',
                 width: '100%',
                 backgroundColor: active ? 'rgba(255,255,255,0.18)' : 'inherit',
@@ -202,19 +221,31 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
+                whiteSpace: 'nowrap',
+                minHeight: 40,
+                px: 1,
               }}
               aria-current={active ? 'page' : undefined}
               aria-label={`Go to ${label}`}
             >
               {icon}
-              <span style={{ flexGrow: 1 }}>{label}</span>
+              <span style={{ flexGrow: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
               {showBadge && badgeContent > 0 && (
                 <Chip
                   label={badgeContent > 99 ? '99+' : badgeContent}
-                  color="error"
                   size="small"
-                  sx={{ fontWeight: 'bold', ml: 'auto' }}
-                  aria-label={`${badgeContent} pending approvals`}
+                  sx={{
+                    ml: 'auto',
+                    height: 18,
+                    minWidth: 18,
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    bgcolor: '#ffffff',
+                    color: '#667eea',
+                    flexShrink: 0,
+                    '& .MuiChip-label': { px: 0.75 },
+                  }}
+                  aria-label={`${badgeContent} notifications`}
                 />
               )}
             </Button>
@@ -225,7 +256,14 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
         <Button
           variant="contained"
           onClick={onLogout}
-          sx={{ mt: 4, width: '100%', fontWeight: 700, bgcolor: 'rgba(255,255,255,0.15)', color: 'white', ':hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}
+          sx={{
+            mt: 4,
+            width: '100%',
+            fontWeight: 700,
+            bgcolor: 'rgba(255,255,255,0.15)',
+            color: 'white',
+            ':hover': { bgcolor: 'rgba(255,255,255,0.25)' },
+          }}
           aria-label="Logout"
         >
           Logout
@@ -237,6 +275,8 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
 
 export default function DashboardShell({ children, title }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [approvalsPending, setApprovalsPending] = useState(0);
+  const [meetingsPending, setMeetingsPending] = useState(0);
 
   const { username, userRole } = useMemo(() => {
     try {
@@ -247,6 +287,58 @@ export default function DashboardShell({ children, title }) {
       return { username: '', userRole: '' };
     }
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const token = localStorage.getItem('token');
+    if (!token) return undefined;
+
+    const config = { headers: { 'x-auth-token': token } };
+
+    const refreshBadges = async () => {
+      try {
+        const meetingsRes = await axios.get(`${API_BASE_URL}/meetings`, config);
+        if (isMounted) {
+          const now = Date.now();
+          const upcoming = (meetingsRes.data || []).filter(
+            (m) => new Date(m.meetingTime).getTime() >= now
+          );
+          setMeetingsPending(upcoming.length);
+        }
+      } catch {
+        // non-critical
+      }
+
+      if (userRole === 'head') {
+        try {
+          const summaryRes = await axios.get(`${API_BASE_URL}/auth/pending-summary`, config);
+          if (isMounted) {
+            setApprovalsPending(summaryRes.data?.total || 0);
+          }
+        } catch {
+          // non-critical
+        }
+      }
+    };
+
+    refreshBadges();
+
+    const handleNewMeeting = () => {
+      setMeetingsPending((prev) => prev + 1);
+    };
+    const handleMeetingDeleted = () => {
+      setMeetingsPending((prev) => (prev > 0 ? prev - 1 : 0));
+    };
+
+    socket.on('new-meeting', handleNewMeeting);
+    socket.on('meeting-deleted', handleMeetingDeleted);
+
+    return () => {
+      isMounted = false;
+      socket.off('new-meeting', handleNewMeeting);
+      socket.off('meeting-deleted', handleMeetingDeleted);
+    };
+  }, [userRole]);
 
   const handleDrawerToggle = () => setMobileOpen((p) => !p);
 
@@ -274,7 +366,8 @@ export default function DashboardShell({ children, title }) {
     >
       <SidebarMenu
         userRole={userRole}
-        approvalsPending={0}
+        approvalsPending={approvalsPending}
+        meetingsPending={meetingsPending}
         mobileOpen={mobileOpen}
         onDrawerToggle={handleDrawerToggle}
         onLogout={handleLogout}
@@ -352,7 +445,6 @@ export default function DashboardShell({ children, title }) {
             boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
           }}
         >
-          {/* Logo - top left */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
             <SecurityIcon sx={{ fontSize: 50, color: '#667eea' }} />
             <Typography
@@ -370,7 +462,6 @@ export default function DashboardShell({ children, title }) {
             </Typography>
           </Box>
 
-          {/* Welcome text + avatar - top right */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
             <Typography
               variant="h6"

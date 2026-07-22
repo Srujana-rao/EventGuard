@@ -125,7 +125,7 @@ export default function ChangePassword() {
                 lineHeight: 1.5,
               }}
             >
-              No worries — enter your email and we'll send you a link to get back into your account.
+              No worries — enter your email address, and we'll send you a link to reset your password.
             </Typography>
           </Box>
         </Box>

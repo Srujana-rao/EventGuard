@@ -213,14 +213,110 @@ router.post('/request-role-change', auth, async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
 
+    if (user.role === 'head') {
+      return res.status(403).json({ msg: 'Head users cannot request a role change.' });
+    }
+
+    if (user.role === role) {
+      return res.status(400).json({ msg: 'You already have this role.' });
+    }
+
+    // Keep the current role unchanged until a head approves.
     user.pendingRole = role;
     user.roleChangeStatus = 'pending';
     await user.save();
 
     res.json({
-      msg: 'Role change requested, awaiting head approval.',
+      msg: 'Role change requested, awaiting head approval. Your current role is unchanged.',
+      role: user.role,
       pendingRole: user.pendingRole,
       roleChangeStatus: user.roleChangeStatus,
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// GET PENDING ROLE CHANGE REQUESTS (HEAD ONLY)
+router.get('/pending-role-changes', auth, authorizeRole(['head']), async (req, res) => {
+  try {
+    const pending = await User.find({ roleChangeStatus: 'pending' }).select('-password');
+    res.json(pending);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// APPROVE ROLE CHANGE (HEAD ONLY)
+router.post('/approve-role-change/:id', auth, authorizeRole(['head']), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    if (user.roleChangeStatus !== 'pending' || !user.pendingRole) {
+      return res.status(400).json({ msg: 'No pending role change for this user' });
+    }
+
+    user.role = user.pendingRole;
+    user.pendingRole = null;
+    user.roleChangeStatus = 'approved';
+    await user.save();
+
+    res.json({
+      msg: 'Role change approved.',
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        roleChangeStatus: user.roleChangeStatus,
+      },
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// REJECT ROLE CHANGE (HEAD ONLY)
+router.post('/reject-role-change/:id', auth, authorizeRole(['head']), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    if (user.roleChangeStatus !== 'pending') {
+      return res.status(400).json({ msg: 'No pending role change for this user' });
+    }
+
+    // Clear the request only — do not modify the user's existing role.
+    const unchangedRole = user.role;
+    user.pendingRole = null;
+    user.roleChangeStatus = 'rejected';
+    await user.save();
+
+    res.json({
+      msg: 'Role change rejected. Existing role remains unchanged.',
+      user: {
+        id: user.id,
+        username: user.username,
+        role: unchangedRole,
+        roleChangeStatus: user.roleChangeStatus,
+      },
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// PENDING COUNTS SUMMARY FOR SIDEBAR BADGES (HEAD ONLY)
+router.get('/pending-summary', auth, authorizeRole(['head']), async (req, res) => {
+  try {
+    const pendingUsers = await User.countDocuments({ isApproved: false });
+    const pendingRoleChanges = await User.countDocuments({ roleChangeStatus: 'pending' });
+    res.json({
+      pendingUsers,
+      pendingRoleChanges,
+      total: pendingUsers + pendingRoleChanges,
     });
   } catch (err) {
     console.error(err.message);

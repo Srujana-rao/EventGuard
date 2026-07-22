@@ -69,9 +69,11 @@ function ProfileSection({ onProfileUpdate }) {
 
   const [name, setName] = useState(storedUser.username || '');
   const [email, setEmail] = useState(storedUser.email || '');
+  const [currentRole, setCurrentRole] = useState(storedUser.role || 'ground');
   const [selectedRole, setSelectedRole] = useState(storedUser.role || 'ground');
   const [pendingRole, setPendingRole] = useState(null);
   const [roleChangeStatus, setRoleChangeStatus] = useState('none');
+  const isHead = (storedUser.role || currentRole) === 'head';
   const [avatarPreview, setAvatarPreview] = useState(
     localStorage.getItem('profileAvatar') || ''
   );
@@ -93,14 +95,29 @@ function ProfileSection({ onProfileUpdate }) {
         const res = await axios.get('http://localhost:5000/api/auth/me', {
           headers: { 'x-auth-token': token },
         });
-        setPendingRole(res.data.pendingRole || null);
-        setRoleChangeStatus(res.data.roleChangeStatus || 'none');
+
+        const serverRole = res.data.role || storedUser.role || 'ground';
+        const status = res.data.roleChangeStatus || 'none';
+
+        // Always keep the actual role from the server — never treat pendingRole as active.
+        setCurrentRole(serverRole);
+        setSelectedRole(serverRole);
+        setPendingRole(status === 'pending' ? res.data.pendingRole || null : null);
+        setRoleChangeStatus(status === 'pending' ? 'pending' : status === 'rejected' ? 'none' : status);
+
+        const syncedUser = {
+          ...storedUser,
+          username: res.data.username || storedUser.username,
+          email: res.data.email || storedUser.email,
+          role: serverRole,
+        };
+        localStorage.setItem('user', JSON.stringify(syncedUser));
       } catch {
         // non-critical — settings page still usable without this
       }
     };
     fetchMe();
-  }, []);
+  }, [storedUser]);
 
   const onCropComplete = useCallback((_croppedArea, pixels) => {
     setCroppedAreaPixels(pixels);
@@ -154,10 +171,12 @@ function ProfileSection({ onProfileUpdate }) {
     setSaving(true);
     setMessage('');
 
+    // Never write a requested/pending role into localStorage — only the approved role.
     const updatedUser = {
       ...storedUser,
       username: name,
       email,
+      role: currentRole,
     };
     localStorage.setItem('user', JSON.stringify(updatedUser));
     if (avatarPreview) {
@@ -169,7 +188,7 @@ function ProfileSection({ onProfileUpdate }) {
       onProfileUpdate(updatedUser);
     }
 
-    if (selectedRole !== storedUser.role) {
+    if (!isHead && selectedRole !== currentRole) {
       try {
         const token = localStorage.getItem('token');
         await axios.post(
@@ -179,8 +198,11 @@ function ProfileSection({ onProfileUpdate }) {
         );
         setPendingRole(selectedRole);
         setRoleChangeStatus('pending');
-        setMessage('Waiting for Head approval.');
+        // Keep the active role unchanged until Head approves.
+        setSelectedRole(currentRole);
+        setMessage('Role change requested. Waiting for Head approval — your current role is unchanged.');
       } catch (err) {
+        setSelectedRole(currentRole);
         setMessage(err.response?.data?.msg || 'Failed to request role change.');
       }
     } else {
@@ -228,25 +250,31 @@ function ProfileSection({ onProfileUpdate }) {
         onChange={(e) => setEmail(e.target.value)}
       />
 
-      <TextField
-        select
-        label="Organization / Role"
-        fullWidth
-        margin="normal"
-        value={selectedRole}
-        onChange={(e) => setSelectedRole(e.target.value)}
-        disabled={roleChangeStatus === 'pending'}
-      >
-        <MenuItem value="room">Room</MenuItem>
-        <MenuItem value="ground">Ground</MenuItem>
-      </TextField>
+      {!isHead && (
+        <>
+          <TextField
+            select
+            label="Organization / Role"
+            fullWidth
+            margin="normal"
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+            disabled={roleChangeStatus === 'pending'}
+          >
+            <MenuItem value="room">Room</MenuItem>
+            <MenuItem value="ground">Ground</MenuItem>
+          </TextField>
 
-      {roleChangeStatus === 'pending' && (
-        <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
-          Waiting for Head approval (Requested: {pendingRole})
-        </Typography>
+          {roleChangeStatus === 'pending' && (
+            <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+              Waiting for Head approval (Requested: {pendingRole}). Your current
+              role ({currentRole}) stays active until approved.
+            </Typography>
+          )}
+        </>
       )}
-      {message && roleChangeStatus !== 'pending' && (
+
+      {message && (
         <Typography variant="body2" sx={{ mt: 1 }}>
           {message}
         </Typography>

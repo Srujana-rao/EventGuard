@@ -125,10 +125,11 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            // Store user info on the socket object
-            socket.user = { id: user.id, username: user.username, role: user.role };
-            socketToUserId.set(socket.id, user.id);
-            userIdToSocketId.set(user.id, socket.id);
+            // Store user info on the socket object (always use string IDs for presence checks)
+            const userId = String(user._id);
+            socket.user = { id: userId, username: user.username, role: user.role };
+            socketToUserId.set(socket.id, userId);
+            userIdToSocketId.set(userId, socket.id);
 
             // Add socket to appropriate role set
             connectedUsersByRole[user.role].add(socket.id);
@@ -139,7 +140,8 @@ io.on('connection', (socket) => {
                 ground: connectedUsersByRole.ground.size,
             });
             // Let the client know authentication was successful
-            socket.emit('authenticated', { status: true, user: { id: user.id, username: user.username, role: user.role } });
+            socket.emit('authenticated', { status: true, user: { id: userId, username: user.username, role: user.role } });
+            io.emit('presence-updated');
 
         } catch (err) {
             console.error(`Socket authentication failed for ${socket.id}:`, err.message);
@@ -217,6 +219,7 @@ io.on('connection', (socket) => {
                 room: connectedUsersByRole.room.size,
                 ground: connectedUsersByRole.ground.size,
             });
+            io.emit('presence-updated');
         }
     });
 });
@@ -320,9 +323,11 @@ app.get('/api/alerts', async (req, res) => {
 app.get('/api/users', async (_req, res) => {
     try {
         const users = await User.find().select('username role');
-        const onlineUserIds = new Set(socketToUserId.values());
+        const onlineUserIds = new Set(
+            Array.from(socketToUserId.values()).map((id) => String(id))
+        );
         const result = users.map((user) => {
-            const isOnline = onlineUserIds.has(user.id);
+            const isOnline = onlineUserIds.has(String(user._id));
             return {
                 username: user.username,
                 role: user.role,
@@ -370,11 +375,14 @@ app.post('/api/meetings', auth, async (req, res) => {
 
         await meeting.save();
 
-        // Emit meeting over Socket.IO
+        // Emit meeting over Socket.IO — always include heads so organizers see it too
         if (targetRole === 'all') {
             io.emit('new-meeting', meeting);
         } else {
             io.to(targetRole).emit('new-meeting', meeting);
+            if (targetRole !== 'head') {
+                io.to('head').emit('new-meeting', meeting);
+            }
         }
 
         res.status(201).json(meeting);
@@ -388,9 +396,13 @@ app.post('/api/meetings', auth, async (req, res) => {
 app.get('/api/meetings', auth, async (req, res) => {
     try {
         const userRole = req.user.role;
-        const meetings = await Meeting.find({
-            $or: [{ targetRole: 'all' }, { targetRole: userRole }],
-        }).sort({ meetingTime: 1 });
+        // Heads manage meetings — show all of them. Other roles only see theirs + "all".
+        const meetings =
+            userRole === 'head'
+                ? await Meeting.find().sort({ meetingTime: 1 })
+                : await Meeting.find({
+                      $or: [{ targetRole: 'all' }, { targetRole: userRole }],
+                  }).sort({ meetingTime: 1 });
 
         res.status(200).json(meetings);
     } catch (error) {

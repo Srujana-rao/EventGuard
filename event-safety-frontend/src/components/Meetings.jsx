@@ -10,9 +10,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  List,
-  Card,
-  CardContent,
+  Chip,
+  Alert,
 } from '@mui/material';
 import { socket } from '../socket';
 
@@ -37,6 +36,7 @@ export default function Meetings({ userRole }) {
   const [meetingLink, setMeetingLink] = useState('');
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
+  const [createSuccess, setCreateSuccess] = useState('');
 
   const isHead = userRole === 'head';
 
@@ -51,7 +51,7 @@ export default function Meetings({ userRole }) {
         if (isMounted) {
           setMeetings(res.data || []);
         }
-      } catch (err) {
+      } catch {
         if (isMounted) {
           setError('Failed to load meetings.');
         }
@@ -103,10 +103,11 @@ export default function Meetings({ userRole }) {
   const handleCreateMeeting = async (e) => {
     e.preventDefault();
     setCreateError(null);
+    setCreateSuccess('');
     setCreating(true);
 
     try {
-      await axios.post(`${API_BASE_URL}/meetings`, {
+      const res = await axios.post(`${API_BASE_URL}/meetings`, {
         title,
         description,
         targetRole,
@@ -114,11 +115,23 @@ export default function Meetings({ userRole }) {
         meetingLink,
       });
 
+      // Immediately show the meeting for the head (don't wait only on socket)
+      if (res.data) {
+        setMeetings((prev) => {
+          if (prev.find((m) => m._id === res.data._id)) return prev;
+          return [...prev, res.data].sort(
+            (a, b) => new Date(a.meetingTime) - new Date(b.meetingTime)
+          );
+        });
+      }
+
       setTitle('');
       setDescription('');
       setTargetRole('all');
       setMeetingTime('');
       setMeetingLink('');
+      setCreateSuccess('Meeting scheduled successfully.');
+      setTimeout(() => setCreateSuccess(''), 3000);
     } catch (err) {
       setCreateError(
         err.response?.data?.message || 'Failed to schedule meeting.'
@@ -133,191 +146,223 @@ export default function Meetings({ userRole }) {
       sx={{
         width: '100%',
         display: 'grid',
-        gridTemplateColumns: { xs: '1fr', md: isHead ? '1fr 1.2fr' : '1fr' },
-        gap: 3,
+        gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+        gap: 4,
+        alignItems: 'stretch',
       }}
     >
-        {isHead && (
-          <Paper
-            elevation={4}
-            sx={{
-              p: 3,
-              borderRadius: 3,
-            }}
-          >
-            <Typography variant="h5" gutterBottom fontWeight={700}>
-              Schedule Meeting
-            </Typography>
-            <Box component="form" onSubmit={handleCreateMeeting} noValidate>
-              <TextField
-                label="Title"
-                variant="outlined"
-                fullWidth
-                margin="normal"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-              />
-              <TextField
-                label="Description"
-                variant="outlined"
-                fullWidth
-                margin="normal"
-                multiline
-                minRows={2}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-              <FormControl
-                variant="standard"
-                fullWidth
-                margin="normal"
-                required
-              >
-                <InputLabel id="target-role-label">Target Role</InputLabel>
-                <Select
-                  labelId="target-role-label"
-                  value={targetRole}
-                  onChange={(e) => setTargetRole(e.target.value)}
-                  label="Target Role"
-                >
-                  <MenuItem value="all">All Staff</MenuItem>
-                  <MenuItem value="head">Head Staff</MenuItem>
-                  <MenuItem value="room">Room Staff</MenuItem>
-                  <MenuItem value="ground">Ground Staff</MenuItem>
-                </Select>
-              </FormControl>
-              <TextField
-                label="Date & Time"
-                type="datetime-local"
-                variant="standard"
-                fullWidth
-                margin="normal"
-                value={meetingTime}
-                onChange={(e) => setMeetingTime(e.target.value)}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                required
-              />
-              <TextField
-                label="Meeting Link (optional)"
-                variant="outlined"
-                fullWidth
-                margin="normal"
-                value={meetingLink}
-                onChange={(e) => setMeetingLink(e.target.value)}
-                placeholder="https://meet.google.com/..."
-              />
-              {createError && (
-                <Typography
-                  variant="body2"
-                  color="error"
-                  sx={{ mt: 1 }}
-                >
-                  {createError}
-                </Typography>
-              )}
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                fullWidth
-                sx={{ mt: 3 }}
-                disabled={creating || !title || !targetRole || !meetingTime}
-              >
-                {creating ? 'Scheduling...' : 'Schedule Meeting'}
-              </Button>
-            </Box>
-          </Paper>
-        )}
-
+      {isHead && (
         <Paper
           elevation={4}
           sx={{
-            p: 3,
+            p: { xs: 2.5, md: 4 },
             borderRadius: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           <Typography variant="h5" gutterBottom fontWeight={700}>
-            Upcoming Meetings
+            Schedule Meeting
           </Typography>
-          {loading && (
-            <Typography variant="body1" color="text.secondary">
-              Loading meetings...
-            </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Create a meeting for all staff or a specific role.
+          </Typography>
+
+          {createSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {createSuccess}
+            </Alert>
           )}
-          {error && (
-            <Typography variant="body2" color="error">
-              {error}
-            </Typography>
+          {createError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {createError}
+            </Alert>
           )}
-          {!loading && !error && meetings.length === 0 && (
-            <Typography variant="body2" color="text.secondary">
-              No meetings scheduled yet.
-            </Typography>
-          )}
-          {!loading && !error && meetings.length > 0 && (
-            <List sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {meetings.map((meeting) => (
-                <Card key={meeting._id} variant="outlined">
-                  <CardContent>
-                    <Typography variant="h6" fontWeight={700}>
-                      {meeting.title}
-                    </Typography>
-                    {meeting.description && (
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mt: 0.5 }}
-                      >
-                        {meeting.description}
-                      </Typography>
-                    )}
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      <strong>For:</strong>{' '}
-                      {roleLabelMap[meeting.targetRole] || meeting.targetRole}
-                    </Typography>
-                    <Typography variant="body2">
-                      <strong>Time:</strong>{' '}
-                      {new Date(meeting.meetingTime).toLocaleString()}
-                    </Typography>
-                    {meeting.createdBy && (
-                      <Typography variant="body2">
-                        <strong>Created by:</strong> {meeting.createdBy}
-                      </Typography>
-                    )}
-                    {meeting.meetingLink && (
-                      <Typography variant="body2" sx={{ mt: 0.5 }}>
-                        <strong>Join:</strong>{' '}
-                        <a
-                          href={meeting.meetingLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Open meeting link
-                        </a>
-                      </Typography>
-                    )}
-                    {isHead && (
-                      <Box sx={{ mt: 1.5 }}>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          size="small"
-                          onClick={() => handleDeleteMeeting(meeting._id)}
-                        >
-                          Delete Meeting
-                        </Button>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </List>
-          )}
+
+          <Box component="form" onSubmit={handleCreateMeeting} noValidate>
+            <TextField
+              label="Title"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+            <TextField
+              label="Description"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              multiline
+              minRows={2}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+            <FormControl variant="outlined" fullWidth margin="normal" required>
+              <InputLabel id="target-role-label">Target Role</InputLabel>
+              <Select
+                labelId="target-role-label"
+                value={targetRole}
+                onChange={(e) => setTargetRole(e.target.value)}
+                label="Target Role"
+              >
+                <MenuItem value="all">All Staff</MenuItem>
+                <MenuItem value="head">Head Staff</MenuItem>
+                <MenuItem value="room">Room Staff</MenuItem>
+                <MenuItem value="ground">Ground Staff</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              label="Date & Time"
+              type="datetime-local"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={meetingTime}
+              onChange={(e) => setMeetingTime(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              required
+            />
+            <TextField
+              label="Meeting Link"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={meetingLink}
+              onChange={(e) => setMeetingLink(e.target.value)}
+              placeholder="https://meet.google.com/..."
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              sx={{ mt: 3, py: 1.1, fontWeight: 600, textTransform: 'none' }}
+              disabled={creating || !title || !targetRole || !meetingTime}
+            >
+              {creating ? 'Scheduling...' : 'Schedule Meeting'}
+            </Button>
+          </Box>
         </Paper>
+      )}
+
+      <Paper
+        elevation={4}
+        sx={{
+          p: { xs: 2.5, md: 4 },
+          borderRadius: 3,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <Typography variant="h5" gutterBottom fontWeight={700}>
+          Upcoming Meetings
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          View scheduled meetings for your team.
+        </Typography>
+
+        {loading && (
+          <Typography variant="body1" color="text.secondary">
+            Loading meetings...
+          </Typography>
+        )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        {!loading && !error && meetings.length === 0 && (
+          <Typography variant="body2" color="text.secondary">
+            No meetings scheduled yet.
+          </Typography>
+        )}
+        {!loading && !error && meetings.length > 0 && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {meetings.map((meeting) => (
+              <Paper
+                key={meeting._id}
+                variant="outlined"
+                sx={{
+                  p: 2.5,
+                  borderRadius: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: 1,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <Typography variant="h6" fontWeight={700}>
+                    {meeting.title}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={roleLabelMap[meeting.targetRole] || meeting.targetRole}
+                    color="primary"
+                    variant="outlined"
+                  />
+                </Box>
+
+                {meeting.description && (
+                  <Typography variant="body2" color="text.secondary">
+                    {meeting.description}
+                  </Typography>
+                )}
+
+                <Typography variant="body2">
+                  <strong>Time:</strong>{' '}
+                  {new Date(meeting.meetingTime).toLocaleString()}
+                </Typography>
+
+                {meeting.createdBy && (
+                  <Typography variant="body2">
+                    <strong>Created by:</strong> {meeting.createdBy}
+                  </Typography>
+                )}
+
+                {meeting.meetingLink && (
+                  <Typography variant="body2">
+                    <strong>Join:</strong>{' '}
+                    <a
+                      href={meeting.meetingLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#667eea', fontWeight: 600 }}
+                    >
+                      Open meeting link
+                    </a>
+                  </Typography>
+                )}
+
+                {isHead && (
+                  <Box sx={{ mt: 1 }}>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => handleDeleteMeeting(meeting._id)}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Delete Meeting
+                    </Button>
+                  </Box>
+                )}
+              </Paper>
+            ))}
+          </Box>
+        )}
+      </Paper>
     </Box>
   );
 }
-

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import HeadDashboard from './HeadDashboard';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -17,19 +16,16 @@ import {
   Badge,
   IconButton,
   Avatar,
-  useMediaQuery,
   Drawer,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Collapse,
 } from '@mui/material';
 
 import SendIcon from '@mui/icons-material/Send';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import GroupsIcon from '@mui/icons-material/Groups';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -58,7 +54,6 @@ function SidebarMenu({
 }) {
   const location = useLocation();
   const matchDashboard = location.pathname === '/dashboard';
-  const matchIncidents = location.pathname === '/incidents';
   const matchHeadDashboard = location.pathname === '/head-dashboard';
   const matchStaffInfo = location.pathname === '/staff-info';
   const matchMeetings = location.pathname === '/meetings';
@@ -72,14 +67,6 @@ function SidebarMenu({
       showBadge: false,
       badgeContent: null,
       active: matchDashboard,
-    },
-    {
-      label: 'Report Incident',
-      to: '/incidents',
-      icon: <AddCircleOutlineIcon />,
-      showBadge: false,
-      badgeContent: null,
-      active: matchIncidents,
     },
     {
       label: 'Staff Info',
@@ -112,7 +99,7 @@ function SidebarMenu({
       label: 'User Approvals',
       to: '/head-dashboard',
       icon: <AdminPanelSettingsIcon />,
-      showBadge: true,
+      showBadge: approvalsPending > 0,
       badgeContent: approvalsPending,
       active: matchHeadDashboard,
     });
@@ -157,7 +144,22 @@ function SidebarMenu({
                 <ListItemIcon sx={{ color: 'white' }}>{icon}</ListItemIcon>
                 <ListItemText primary={label} />
                 {showBadge && badgeContent > 0 && (
-                  <Badge badgeContent={badgeContent} color="error" max={99} sx={{ mr: 3 }} />
+                  <Badge
+                    badgeContent={badgeContent}
+                    max={99}
+                    sx={{
+                      mr: 2,
+                      '& .MuiBadge-badge': {
+                        bgcolor: '#ffffff',
+                        color: '#667eea',
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        minWidth: 18,
+                        height: 18,
+                        px: 0.5,
+                      },
+                    }}
+                  />
                 )}
               </ListItemButton>
             </ListItem>
@@ -225,7 +227,7 @@ function SidebarMenu({
               sx={{
                 justifyContent: 'flex-start',
                 fontWeight: 600,
-                fontSize: 16,
+                fontSize: 15,
                 textTransform: 'none',
                 width: '100%',
                 backgroundColor: active ? 'rgba(255,255,255,0.18)' : 'inherit',
@@ -236,18 +238,30 @@ function SidebarMenu({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
+                whiteSpace: 'nowrap',
+                minHeight: 40,
+                px: 1,
               }}
               aria-current={active ? 'page' : undefined}
               aria-label={`Go to ${label}`}
             >
               {icon}
-              <span style={{ flexGrow: 1 }}>{label}</span>
+              <span style={{ flexGrow: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
               {showBadge && badgeContent > 0 && (
                 <Chip
                   label={badgeContent > 99 ? '99+' : badgeContent}
-                  color="error"
                   size="small"
-                  sx={{ fontWeight: 'bold', ml: 'auto' }}
+                  sx={{
+                    ml: 'auto',
+                    height: 18,
+                    minWidth: 18,
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    bgcolor: '#ffffff',
+                    color: '#667eea',
+                    flexShrink: 0,
+                    '& .MuiChip-label': { px: 0.75 },
+                  }}
                   aria-label={`${badgeContent} pending approvals`}
                 />
               )}
@@ -584,164 +598,7 @@ const AlertsTab = ({
   );
 };
 
-const NewIncidentTab = ({
-  newIncidentType,
-  setNewIncidentType,
-  newIncidentLocation,
-  setNewIncidentLocation,
-  newIncidentMediaFile,
-  setNewIncidentMediaFile,
-  handleAddIncident,
-  incidents,
-  loadingIncidents,
-  incidentsError,
-  fetchIncidents,
-  handleDeleteIncident,
-  incidentMediaInputRef,
-}) => {
-  const isAddIncidentDisabled =
-    !newIncidentType.trim() || !newIncidentLocation.trim();
-
-  return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 4 }}>
-      <Paper elevation={4} sx={{ p: 4, borderRadius: 3 }}>
-        <Typography variant="h5" gutterBottom fontWeight={700}>
-          Add New Incident
-        </Typography>
-        <Box component="form" onSubmit={handleAddIncident} noValidate>
-          <TextField
-            variant="standard"
-            fullWidth
-            placeholder="Enter incident type"
-            value={newIncidentType}
-            onChange={(e) => setNewIncidentType(e.target.value)}
-            sx={{
-              mb: 3,
-              maxWidth: '100%',
-              '& .MuiInputBase-root': {
-                width: '100%',
-              },
-              '& .MuiInput-underline:before': {
-                left: 0,
-                right: 0,
-              },
-              '& .MuiInput-underline:after': {
-                left: 0,
-                right: 0,
-              },
-            }}
-            required
-            inputProps={{ 'aria-label': 'Incident type' }}
-          />
-
-          <TextField
-            variant="standard"
-            fullWidth
-            placeholder="Enter location"
-            value={newIncidentLocation}
-            onChange={(e) => setNewIncidentLocation(e.target.value)}
-            sx={{ mb: 3 }}
-            required
-            inputProps={{ 'aria-label': 'Incident location' }}
-          />
-          {newIncidentMediaFile && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                Selected image preview:
-              </Typography>
-              <img
-                src={URL.createObjectURL(newIncidentMediaFile)}
-                alt="Incident preview"
-                style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 4 }}
-              />
-            </Box>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              if (e.target.files.length > 0) {
-                setNewIncidentMediaFile(e.target.files[0]);
-              } else {
-                setNewIncidentMediaFile(null);
-              }
-            }}
-            style={{ marginBottom: 20, display: 'block' }}
-            ref={incidentMediaInputRef}
-            aria-label="Select incident image file"
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            disabled={isAddIncidentDisabled}
-            sx={{ py: 1.8 }}
-            aria-disabled={isAddIncidentDisabled}
-            aria-label="Add incident"
-          >
-            Add Incident
-          </Button>
-          {incidentsError && (
-            <Typography variant="body2" color="error" mt={2} fontWeight={600} role="alert">
-              {incidentsError}
-            </Typography>
-          )}
-        </Box>
-      </Paper>
-
-      <Paper elevation={4} sx={{ p: 4, borderRadius: 3, maxHeight: 620, overflowY: 'auto' }}>
-        <Typography variant="h5" gutterBottom fontWeight={700}>
-          Recorded Incidents
-        </Typography>
-        <Button onClick={fetchIncidents} disabled={loadingIncidents} variant="outlined" sx={{ mb: 3 }}>
-          {loadingIncidents ? 'Loading...' : 'Refresh Incidents'}
-        </Button>
-        {loadingIncidents && <Typography>Loading incidents...</Typography>}
-        {!loadingIncidents && incidents.length === 0 && <Typography>No incidents found. Add one!</Typography>}
-        {!loadingIncidents && incidents.length > 0 && (
-          <ul aria-live="polite">
-            {incidents.map((incident) => (
-              <li key={incident._id} style={{ marginBottom: 18 }}>
-                <Typography>
-                  <strong>Type:</strong> {incident.type} <br />
-                  <strong>Location:</strong> {incident.location} <br />
-                  <strong>Time:</strong> {new Date(incident.timestamp).toLocaleString()}
-                </Typography>
-                {incident.imageUrl && (
-                  <Box mt={1} mb={2}>
-                    <img
-                      src={incident.imageUrl}
-                      alt="Incident"
-                      style={{ maxWidth: '100%', maxHeight: 350, borderRadius: 4 }}
-                    />
-                    <Typography mt={1}>
-                      <a href={incident.imageUrl} target="_blank" rel="noopener noreferrer">
-                        View Image
-                      </a>
-                    </Typography>
-                  </Box>
-                )}
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={() => handleDeleteIncident(incident._id)}
-                  aria-label={`Delete incident ${incident.type} at ${incident.location}`}
-                >
-                  Delete Incident
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Paper>
-    </Box>
-  );
-};
-
 export default function Dashboard({
-  backendMessage,
   username,
   userRole,
   handleLogout,
@@ -759,28 +616,11 @@ export default function Dashboard({
   setAlertLocationTag,
   handleSendAlert,
   realtimeAlerts,
-  newIncidentType,
-  setNewIncidentType,
-  newIncidentLocation,
-  setNewIncidentLocation,
-  newIncidentMediaFile,
-  setNewIncidentMediaFile,
-  incidents,
-  loadingIncidents,
-  incidentsError,
-  fetchIncidents,
-  handleAddIncident,
-  handleDeleteIncident,
   alertMediaInputRef,
-  incidentMediaInputRef,
-  approvalsPending,
-  meetingNotificationCount,
+  approvalsPending = 0,
+  meetingNotificationCount = 0,
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const location = useLocation();
-  const isHeadDashboard = location.pathname === '/head-dashboard';
-  const isIncidentsPage = location.pathname === '/incidents';
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -887,7 +727,6 @@ export default function Dashboard({
             boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
           }}
         >
-          {/* Logo - top left */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
             <SecurityIcon sx={{ fontSize: 50, color: '#667eea' }} />
             <Typography
@@ -905,16 +744,13 @@ export default function Dashboard({
             </Typography>
           </Box>
 
-          {/* Welcome text + avatar - top right */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
             <Typography
               variant="h6"
               sx={{ fontWeight: 600, color: '#667eea' }}
               aria-live="polite"
             >
-              {isHeadDashboard
-                ? `User Approvals Pending (${approvalsPending})`
-                : `Welcome, ${username} (${userRole})`}
+              Welcome, {username} ({userRole})
             </Typography>
             <Avatar
               src={localStorage.getItem('profileAvatar') || undefined}
@@ -939,54 +775,23 @@ export default function Dashboard({
           }}
           role="main"
         >
-          {isHeadDashboard ? (
-            <Routes>
-              <Route path="/head-dashboard" element={<HeadDashboard />} />
-              <Route path="*" element={<Navigate to="/head-dashboard" />} />
-            </Routes>
-          ) : isIncidentsPage ? (
-            <Routes>
-              <Route
-                path="/incidents"
-                element={
-                  <NewIncidentTab
-                    newIncidentType={newIncidentType}
-                    setNewIncidentType={setNewIncidentType}
-                    newIncidentLocation={newIncidentLocation}
-                    setNewIncidentLocation={setNewIncidentLocation}
-                    newIncidentMediaFile={newIncidentMediaFile}
-                    setNewIncidentMediaFile={setNewIncidentMediaFile}
-                    handleAddIncident={handleAddIncident}
-                    incidents={incidents}
-                    loadingIncidents={loadingIncidents}
-                    incidentsError={incidentsError}
-                    fetchIncidents={fetchIncidents}
-                    handleDeleteIncident={handleDeleteIncident}
-                    incidentMediaInputRef={incidentMediaInputRef}
-                  />
-                }
-              />
-              <Route path="*" element={<Navigate to="/incidents" />} />
-            </Routes>
-          ) : (
-            <AlertsTab
-              alertMessage={alertMessage}
-              setAlertMessage={setAlertMessage}
-              alertMediaFile={alertMediaFile}
-              setAlertMediaFile={setAlertMediaFile}
-              alertTargetRole={alertTargetRole}
-              setAlertTargetRole={setAlertTargetRole}
-              alertPriority={alertPriority}
-              setAlertPriority={setAlertPriority}
-              alertLocationTag={alertLocationTag}
-              setAlertLocationTag={setAlertLocationTag}
-              handleSendAlert={handleSendAlert}
-              realtimeAlerts={realtimeAlerts}
-              alertSendError={alertSendError}
-              alertSendSuccess={alertSendSuccess}
-              alertMediaInputRef={alertMediaInputRef}
-            />
-          )}
+          <AlertsTab
+            alertMessage={alertMessage}
+            setAlertMessage={setAlertMessage}
+            alertMediaFile={alertMediaFile}
+            setAlertMediaFile={setAlertMediaFile}
+            alertTargetRole={alertTargetRole}
+            setAlertTargetRole={setAlertTargetRole}
+            alertPriority={alertPriority}
+            setAlertPriority={setAlertPriority}
+            alertLocationTag={alertLocationTag}
+            setAlertLocationTag={setAlertLocationTag}
+            handleSendAlert={handleSendAlert}
+            realtimeAlerts={realtimeAlerts}
+            alertSendError={alertSendError}
+            alertSendSuccess={alertSendSuccess}
+            alertMediaInputRef={alertMediaInputRef}
+          />
         </Box>
       </Box>
     </Box>
