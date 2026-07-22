@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
 import {
   Box,
   Paper,
@@ -17,7 +18,9 @@ import {
   DialogActions,
   Tabs,
   Tab,
+  MenuItem,
 } from '@mui/material';
+import { useThemeMode } from '../ThemeModeContext';
 
 const sections = ['Profile', 'Notifications', 'Appearance', 'Account'];
 
@@ -33,30 +36,49 @@ function ProfileSection({ onProfileUpdate }) {
 
   const [name, setName] = useState(storedUser.username || '');
   const [email, setEmail] = useState(storedUser.email || '');
-  const [organization, setOrganization] = useState(storedUser.organization || '');
+  const [selectedRole, setSelectedRole] = useState(storedUser.role || 'ground');
+  const [pendingRole, setPendingRole] = useState(null);
+  const [roleChangeStatus, setRoleChangeStatus] = useState('none');
   const [avatarPreview, setAvatarPreview] = useState(
     localStorage.getItem('profileAvatar') || ''
   );
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get('http://localhost:5000/api/auth/me', {
+          headers: { 'x-auth-token': token },
+        });
+        setPendingRole(res.data.pendingRole || null);
+        setRoleChangeStatus(res.data.roleChangeStatus || 'none');
+      } catch {
+        // non-critical — settings page still usable without this
+      }
+    };
+    fetchMe();
+  }, []);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onloadend = () => {
-      const dataUrl = reader.result;
-      setAvatarPreview(dataUrl);
+      setAvatarPreview(reader.result);
     };
     reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
+    setMessage('');
+
     const updatedUser = {
       ...storedUser,
       username: name,
       email,
-      organization,
     };
     localStorage.setItem('user', JSON.stringify(updatedUser));
     if (avatarPreview) {
@@ -65,7 +87,24 @@ function ProfileSection({ onProfileUpdate }) {
     if (onProfileUpdate) {
       onProfileUpdate(updatedUser);
     }
-    setTimeout(() => setSaving(false), 400);
+
+    if (selectedRole !== storedUser.role) {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.post(
+          'http://localhost:5000/api/auth/request-role-change',
+          { role: selectedRole },
+          { headers: { 'x-auth-token': token } }
+        );
+        setPendingRole(selectedRole);
+        setRoleChangeStatus('pending');
+        setMessage('Waiting for head approval.');
+      } catch (err) {
+        setMessage(err.response?.data?.msg || 'Failed to request role change.');
+      }
+    }
+
+    setTimeout(() => setSaving(false), 300);
   };
 
   return (
@@ -100,13 +139,31 @@ function ProfileSection({ onProfileUpdate }) {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
+
       <TextField
+        select
         label="Organization / Role"
         fullWidth
         margin="normal"
-        value={organization}
-        onChange={(e) => setOrganization(e.target.value)}
-      />
+        value={selectedRole}
+        onChange={(e) => setSelectedRole(e.target.value)}
+        disabled={roleChangeStatus === 'pending'}
+      >
+        <MenuItem value="room">Room</MenuItem>
+        <MenuItem value="ground">Ground</MenuItem>
+      </TextField>
+
+      {roleChangeStatus === 'pending' && (
+        <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+          Waiting for head approval (requested: {pendingRole})
+        </Typography>
+      )}
+      {message && roleChangeStatus !== 'pending' && (
+        <Typography variant="body2" sx={{ mt: 1 }}>
+          {message}
+        </Typography>
+      )}
+
       <Button
         variant="contained"
         color="primary"
@@ -197,20 +254,7 @@ function NotificationsSection() {
 }
 
 function AppearanceSection() {
-  const [theme, setTheme] = useState(
-    localStorage.getItem('themePreference') || 'system'
-  );
-
-  useEffect(() => {
-    localStorage.setItem('themePreference', theme);
-    if (theme === 'light') {
-      document.documentElement.dataset.theme = 'light';
-    } else if (theme === 'dark') {
-      document.documentElement.dataset.theme = 'dark';
-    } else {
-      document.documentElement.dataset.theme = 'system';
-    }
-  }, [theme]);
+  const { preference, setMode } = useThemeMode();
 
   return (
     <Box>
@@ -221,8 +265,8 @@ function AppearanceSection() {
         Choose how the dashboard should look.
       </Typography>
       <RadioGroup
-        value={theme}
-        onChange={(e) => setTheme(e.target.value)}
+        value={preference}
+        onChange={(e) => setMode(e.target.value)}
         name="theme-selection"
       >
         <FormControlLabel value="light" control={<Radio />} label="Light" />
@@ -347,5 +391,3 @@ export default function Settings() {
     </Paper>
   );
 }
-
-

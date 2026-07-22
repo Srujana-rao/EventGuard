@@ -5,6 +5,7 @@ import {
   Typography,
   Button,
   IconButton,
+  Avatar,
   Drawer,
   List,
   ListItem,
@@ -15,18 +16,25 @@ import {
   Badge,
 } from '@mui/material';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import GroupsIcon from '@mui/icons-material/Groups';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+import SettingsIcon from '@mui/icons-material/Settings';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
+import SecurityIcon from '@mui/icons-material/Security';
 import { socket } from '../socket';
 
-const darkBlue = '#0f172a';
+const sidebarGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)';
+const topBarBg = '#ffffff';
+const topBarTextColor = '#333';
 const sidebarWidth = 220;
 
 function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, onLogout }) {
   const location = useLocation();
   const matchDashboard = location.pathname === '/dashboard';
+  const matchIncidents = location.pathname === '/incidents';
   const matchStaffInfo = location.pathname === '/staff-info';
   const matchMeetings = location.pathname === '/meetings';
   const matchHeadDashboard = location.pathname === '/head-dashboard';
@@ -42,9 +50,17 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
       active: matchDashboard,
     },
     {
+      label: 'Report Incident',
+      to: '/incidents',
+      icon: <AddCircleOutlineIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchIncidents,
+    },
+    {
       label: 'Staff Info',
       to: '/staff-info',
-      icon: <AdminPanelSettingsIcon />,
+      icon: <GroupsIcon />,
       showBadge: false,
       badgeContent: null,
       active: matchStaffInfo,
@@ -52,7 +68,7 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
     {
       label: 'Meetings',
       to: '/meetings',
-      icon: <AddCircleOutlineIcon />,
+      icon: <EventNoteIcon />,
       showBadge: false,
       badgeContent: null,
       active: matchMeetings,
@@ -60,7 +76,7 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
     {
       label: 'Settings',
       to: '/settings',
-      icon: <AdminPanelSettingsIcon />,
+      icon: <SettingsIcon />,
       showBadge: false,
       badgeContent: null,
       active: matchSettings,
@@ -90,7 +106,7 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
             width: sidebarWidth,
-            bgcolor: darkBlue,
+            background: sidebarGradient,
             color: 'white',
           },
         }}
@@ -104,8 +120,8 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
                 selected={active}
                 sx={{
                   color: 'white',
-                  '&.Mui-selected': { bgcolor: '#3951a3' },
-                  '&:hover': { bgcolor: '#3951a3' },
+                  '&.Mui-selected': { bgcolor: 'rgba(255,255,255,0.18)' },
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
                 }}
                 onClick={onDrawerToggle}
                 aria-label={`Go to ${label}`}
@@ -122,10 +138,9 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
           <Box sx={{ px: 2, pb: 2, mt: 1 }}>
             <Button
               variant="contained"
-              color="secondary"
               onClick={onLogout}
               fullWidth
-              sx={{ fontWeight: 700, bgcolor: '#397ebaff', ':hover': { bgcolor: '#0a335a' } }}
+              sx={{ fontWeight: 700, bgcolor: 'rgba(255,255,255,0.15)', color: 'white', ':hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}
               aria-label="Logout"
             >
               Logout
@@ -138,7 +153,7 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
         sx={{
           display: { xs: 'none', md: 'flex' },
           width: sidebarWidth,
-          bgcolor: darkBlue,
+          background: sidebarGradient,
           color: 'white',
           flexDirection: 'column',
           alignItems: 'start',
@@ -152,20 +167,20 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
           zIndex: 1300,
         }}
       >
-        <Typography
-          sx={{
-            fontWeight: 700,
-            fontSize: 28,
-            letterSpacing: 0.5,
-            mb: 5,
-            userSelect: 'none',
-            background: 'linear-gradient(90deg, #f7b733, #fc4a1a)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          EventGuard
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 5 }}>
+          <SecurityIcon sx={{ fontSize: 28, color: '#ffd700' }} />
+          <Typography
+            sx={{
+              fontWeight: 700,
+              fontSize: 22,
+              letterSpacing: 0.5,
+              userSelect: 'none',
+              color: '#ffd700',
+            }}
+          >
+            EventGuard
+          </Typography>
+        </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
           {buttons.map(({ label, to, icon, showBadge, badgeContent, active }) => (
@@ -181,8 +196,8 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
                 fontSize: 16,
                 textTransform: 'none',
                 width: '100%',
-                backgroundColor: active ? '#3951a3' : 'inherit',
-                '&:hover': { backgroundColor: '#3951a3' },
+                backgroundColor: active ? 'rgba(255,255,255,0.18)' : 'inherit',
+                '&:hover': { backgroundColor: 'rgba(255,255,255,0.12)' },
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
@@ -209,9 +224,8 @@ function SidebarMenu({ userRole, approvalsPending, mobileOpen, onDrawerToggle, o
         <Box sx={{ flexGrow: 1 }} />
         <Button
           variant="contained"
-          color="secondary"
           onClick={onLogout}
-          sx={{ mt: 4, width: '100%', fontWeight: 700, bgcolor: '#397ebaff', ':hover': { bgcolor: '#0a335a' } }}
+          sx={{ mt: 4, width: '100%', fontWeight: 700, bgcolor: 'rgba(255,255,255,0.15)', color: 'white', ':hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}
           aria-label="Logout"
         >
           Logout
@@ -250,7 +264,7 @@ export default function DashboardShell({ children, title }) {
     <Box
       sx={{
         minHeight: '100vh',
-        width: '100vw',
+        width: '100%',
         bgcolor: '#f0f2f5',
         display: 'flex',
         flexDirection: 'row',
@@ -266,7 +280,6 @@ export default function DashboardShell({ children, title }) {
         onLogout={handleLogout}
       />
 
-      {/* Mobile top bar */}
       <Box
         sx={{
           position: 'fixed',
@@ -274,31 +287,43 @@ export default function DashboardShell({ children, title }) {
           left: 0,
           right: 0,
           height: 64,
-          bgcolor: darkBlue,
-          color: 'white',
+          bgcolor: topBarBg,
+          color: topBarTextColor,
           display: { md: 'none' },
           alignItems: 'center',
           px: 2,
           zIndex: 1400,
-          boxShadow: 3,
+          boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
           justifyContent: 'space-between',
         }}
       >
         <IconButton
-          color="inherit"
           edge="start"
           onClick={handleDrawerToggle}
           aria-label="Open sidebar menu"
+          sx={{ color: '#667eea' }}
         >
           {mobileOpen ? <CloseIcon /> : <MenuIcon />}
         </IconButton>
-        <Typography variant="h6" fontWeight={500} noWrap>
-          EventGuard
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <SecurityIcon sx={{ fontSize: 22, color: '#667eea' }} />
+          <Typography
+            variant="h6"
+            fontWeight={700}
+            noWrap
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            EventGuard
+          </Typography>
+        </Box>
         <Box sx={{ width: 44 }} />
       </Box>
 
-      {/* Main area */}
       <Box
         sx={{
           flexGrow: 1,
@@ -309,47 +334,60 @@ export default function DashboardShell({ children, title }) {
           width: { xs: '100%', md: `calc(100% - ${sidebarWidth}px)` },
         }}
       >
-        {/* Header */}
         <Box
           sx={{
             width: '100%',
             height: 72,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: darkBlue,
-            color: 'white',
-            px: 4,
+            justifyContent: 'space-between',
+            bgcolor: topBarBg,
+            color: topBarTextColor,
+            px: { xs: 2, md: 2.5 },
             position: 'fixed',
             top: { xs: 64, md: 0 },
             left: 0,
             right: 0,
             zIndex: 1350,
-            boxShadow: 3,
+            boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
           }}
         >
-          <Box sx={{ textAlign: 'center', width: '100%' }}>
+          {/* Logo - top left */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+            <SecurityIcon sx={{ fontSize: 50, color: '#667eea' }} />
             <Typography
-              variant="h6"
+              variant="h5"
               sx={{
-                fontWeight: 800,
-                letterSpacing: 0.6,
-                lineHeight: 1.1,
+                fontWeight: 700,
+                letterSpacing: 0.4,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
               }}
             >
               EventGuard
             </Typography>
+          </Box>
+
+          {/* Welcome text + avatar - top right */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
             <Typography
-              variant="body2"
-              sx={{ opacity: 0.92, mt: 0.3 }}
+              variant="h6"
+              sx={{ fontWeight: 600, color: '#667eea' }}
               aria-live="polite"
             >
-              {title || `Welcome, ${username} (${userRole})`}
+              Welcome, {username} ({userRole})
             </Typography>
+            <Avatar
+              src={localStorage.getItem('profileAvatar') || undefined}
+              sx={{ width: 36, height: 36, bgcolor: '#667eea' }}
+            >
+              {username ? username[0]?.toUpperCase() : ''}
+            </Avatar>
           </Box>
         </Box>
 
-        {/* Content */}
         <Box
           sx={{
             flexGrow: 1,
@@ -370,4 +408,3 @@ export default function DashboardShell({ children, title }) {
     </Box>
   );
 }
-

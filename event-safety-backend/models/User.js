@@ -13,31 +13,40 @@ const UserSchema = new mongoose.Schema({
     },
     role: { // 'head', 'room', 'ground'
         type: String,
-        enum: ['head', 'room', 'ground'], // Define allowed roles
-        default: 'ground' // Default role for new signups, can be changed by head
+        enum: ['head', 'room', 'ground'],
+        default: 'ground'
     },
-    isApproved: { // New field for head confirmation
+    isApproved: {
         type: Boolean,
         default: false
     },
-    email: { // Optional: for notifications, password reset etc.
+    email: {
         type: String,
         required: true,
         unique: true,
         trim: true,
         lowercase: true
     },
-    assignedLocation: { // Optional: for ground staff assignment
+    assignedLocation: {
         type: String,
         default: ''
     },
-    // Add these two fields here inside schema:
-    resetPasswordToken: { 
-        type: String 
+    pendingRole: {
+        type: String,
+        enum: ['head', 'room', 'ground', null],
+        default: null
     },
-    resetPasswordExpires: { 
-        type: Date 
+    roleChangeStatus: {
+        type: String,
+        enum: ['none', 'pending', 'approved', 'rejected'],
+        default: 'none'
+    },
+    resetPasswordToken: {
+        type: String
+    },
+    resetPasswordExpires: {
+        type: Date
     }
-}, { timestamps: true }); // Adds createdAt and updatedAt fields
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);

@@ -4,8 +4,6 @@ import HeadDashboard from './HeadDashboard';
 import {
   Box,
   Paper,
-  Tabs,
-  Tab,
   TextField,
   Button,
   Typography,
@@ -18,6 +16,7 @@ import {
   Alert as MuiAlert,
   Badge,
   IconButton,
+  Avatar,
   useMediaQuery,
   Drawer,
   List,
@@ -31,11 +30,17 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import GroupsIcon from '@mui/icons-material/Groups';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+import SettingsIcon from '@mui/icons-material/Settings';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
+import SecurityIcon from '@mui/icons-material/Security';
 
-const darkBlue = '#0f172a'; // Dark navy blue
+const sidebarGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)';
+const topBarBg = '#ffffff';
+const topBarTextColor = '#333';
 
 const sidebarWidth = 220;
 
@@ -43,7 +48,6 @@ function Alert(props) {
   return <MuiAlert elevation={6} variant="filled" {...props} />;
 }
 
-// SidebarMenu component for reuse and responsive drawer
 function SidebarMenu({
   userRole,
   approvalsPending,
@@ -54,6 +58,7 @@ function SidebarMenu({
 }) {
   const location = useLocation();
   const matchDashboard = location.pathname === '/dashboard';
+  const matchIncidents = location.pathname === '/incidents';
   const matchHeadDashboard = location.pathname === '/head-dashboard';
   const matchStaffInfo = location.pathname === '/staff-info';
   const matchMeetings = location.pathname === '/meetings';
@@ -64,14 +69,22 @@ function SidebarMenu({
       label: 'Main Dashboard',
       to: '/dashboard',
       icon: <NotificationsActiveIcon />,
-      showBadge: true,
-      badgeContent: null, // Will be updated by parent usage if needed
+      showBadge: false,
+      badgeContent: null,
       active: matchDashboard,
+    },
+    {
+      label: 'Report Incident',
+      to: '/incidents',
+      icon: <AddCircleOutlineIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchIncidents,
     },
     {
       label: 'Staff Info',
       to: '/staff-info',
-      icon: <AdminPanelSettingsIcon />,
+      icon: <GroupsIcon />,
       showBadge: false,
       badgeContent: null,
       active: matchStaffInfo,
@@ -79,7 +92,7 @@ function SidebarMenu({
     {
       label: 'Meetings',
       to: '/meetings',
-      icon: <AddCircleOutlineIcon />,
+      icon: <EventNoteIcon />,
       showBadge: meetingNotificationCount > 0,
       badgeContent: meetingNotificationCount,
       active: matchMeetings,
@@ -87,7 +100,7 @@ function SidebarMenu({
     {
       label: 'Settings',
       to: '/settings',
-      icon: <AdminPanelSettingsIcon />,
+      icon: <SettingsIcon />,
       showBadge: false,
       badgeContent: null,
       active: matchSettings,
@@ -95,15 +108,15 @@ function SidebarMenu({
   ];
 
   if (userRole === 'head') {
-  buttons.push({
-    label: 'User Approvals',
-    to: '/head-dashboard',
-    icon: <AdminPanelSettingsIcon />,
-    showBadge: true,
-    badgeContent: approvalsPending, // pass the count here
-    active: matchHeadDashboard,
-  });
-}
+    buttons.push({
+      label: 'User Approvals',
+      to: '/head-dashboard',
+      icon: <AdminPanelSettingsIcon />,
+      showBadge: true,
+      badgeContent: approvalsPending,
+      active: matchHeadDashboard,
+    });
+  }
 
   return (
     <>
@@ -112,58 +125,54 @@ function SidebarMenu({
         open={mobileOpen}
         onClose={onDrawerToggle}
         ModalProps={{
-          keepMounted: true, // Better mobile performance
+          keepMounted: true,
         }}
         sx={{
           display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
             width: sidebarWidth,
-            bgcolor: darkBlue,
+            background: sidebarGradient,
             color: 'white',
           },
         }}
       >
-        <List
-          sx={{
-            mt: 6,
-          }}
-        >
+        <List sx={{ mt: 6 }}>
           {buttons.map(({ label, to, icon, showBadge, badgeContent, active }) => (
             <ListItem key={label} disablePadding>
               <ListItemButton
-  component={Link}
-  to={to}
-  selected={active}
-  sx={{
-    color: 'white',
-    '&.Mui-selected': {
-      bgcolor: '#3951a3',
-    },
-    '&:hover': { bgcolor: '#3951a3' },
-  }}
-  onClick={onDrawerToggle}
-  aria-label={`Go to ${label}`}
->
-  <ListItemIcon sx={{ color: 'white' }}>{icon}</ListItemIcon>
-  <ListItemText primary={label} />
-  {showBadge && badgeContent > 0 && (
-    <Badge badgeContent={badgeContent} color="error" max={99} sx={{ mr: 3 }} />
-  )}
-</ListItemButton>
+                component={Link}
+                to={to}
+                selected={active}
+                sx={{
+                  color: 'white',
+                  '&.Mui-selected': {
+                    bgcolor: 'rgba(255,255,255,0.18)',
+                  },
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
+                }}
+                onClick={onDrawerToggle}
+                aria-label={`Go to ${label}`}
+              >
+                <ListItemIcon sx={{ color: 'white' }}>{icon}</ListItemIcon>
+                <ListItemText primary={label} />
+                {showBadge && badgeContent > 0 && (
+                  <Badge badgeContent={badgeContent} color="error" max={99} sx={{ mr: 3 }} />
+                )}
+              </ListItemButton>
             </ListItem>
           ))}
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ px: 2, pb: 2, mt: 1 }}>
             <Button
               variant="contained"
-              color="secondary"
               onClick={onLogout}
               fullWidth
               sx={{
                 fontWeight: 700,
-                bgcolor: '#397ebaff',
-                ':hover': { bgcolor: '#0a335a' },
+                bgcolor: 'rgba(255,255,255,0.15)',
+                color: 'white',
+                ':hover': { bgcolor: 'rgba(255,255,255,0.25)' },
               }}
               aria-label="Logout"
             >
@@ -177,7 +186,7 @@ function SidebarMenu({
         sx={{
           display: { xs: 'none', md: 'flex' },
           width: sidebarWidth,
-          bgcolor: darkBlue,
+          background: sidebarGradient,
           color: 'white',
           flexDirection: 'column',
           alignItems: 'start',
@@ -191,66 +200,72 @@ function SidebarMenu({
           zIndex: 1300,
         }}
       >
-        <Typography
-          sx={{
-            fontWeight: 700,
-            fontSize: 28,
-            letterSpacing: 0.5,
-            mb: 5,
-            userSelect: 'none',
-            background: 'linear-gradient(90deg, #f7b733, #fc4a1a)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          EventGuard
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 5 }}>
+          <SecurityIcon sx={{ fontSize: 28, color: '#ffd700' }} />
+          <Typography
+            sx={{
+              fontWeight: 700,
+              fontSize: 22,
+              letterSpacing: 0.5,
+              userSelect: 'none',
+              color: '#ffd700',
+            }}
+          >
+            EventGuard
+          </Typography>
+        </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
           {buttons.map(({ label, to, icon, showBadge, badgeContent, active }) => (
             <Button
-  key={label}
-  component={Link}
-  to={to}
-  variant="text"
-  color="inherit"
-  sx={{
-    justifyContent: 'flex-start',
-    fontWeight: 600,
-    fontSize: 16,
-    textTransform: 'none',
-    width: '100%',
-    backgroundColor: active ? '#3951a3' : 'inherit',
-    '&:hover': {
-      backgroundColor: '#3951a3',
-    },
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1,
-  }}
-  aria-current={active ? 'page' : undefined}
-  aria-label={`Go to ${label}`}
->
-  {icon}
-  <span style={{ flexGrow: 1 }}>{label}</span>
-  {showBadge && badgeContent > 0 && (
-    <Chip
-      label={badgeContent > 99 ? '99+' : badgeContent}
-      color="error"
-      size="small"
-      sx={{ fontWeight: 'bold', ml: 'auto' }}
-      aria-label={`${badgeContent} pending approvals`}
-    />
-  )}
-</Button>
+              key={label}
+              component={Link}
+              to={to}
+              variant="text"
+              color="inherit"
+              sx={{
+                justifyContent: 'flex-start',
+                fontWeight: 600,
+                fontSize: 16,
+                textTransform: 'none',
+                width: '100%',
+                backgroundColor: active ? 'rgba(255,255,255,0.18)' : 'inherit',
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.12)',
+                },
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+              aria-current={active ? 'page' : undefined}
+              aria-label={`Go to ${label}`}
+            >
+              {icon}
+              <span style={{ flexGrow: 1 }}>{label}</span>
+              {showBadge && badgeContent > 0 && (
+                <Chip
+                  label={badgeContent > 99 ? '99+' : badgeContent}
+                  color="error"
+                  size="small"
+                  sx={{ fontWeight: 'bold', ml: 'auto' }}
+                  aria-label={`${badgeContent} pending approvals`}
+                />
+              )}
+            </Button>
           ))}
         </Box>
         <Box sx={{ flexGrow: 1 }} />
         <Button
           variant="contained"
-          color="secondary"
           onClick={onLogout}
-          sx={{ mt: 4, width: '100%', fontWeight: 700, bgcolor: '#397ebaff', ':hover': { bgcolor: '#0a335a' } }}
+          sx={{
+            mt: 4,
+            width: '100%',
+            fontWeight: 700,
+            bgcolor: 'rgba(255,255,255,0.15)',
+            color: 'white',
+            ':hover': { bgcolor: 'rgba(255,255,255,0.25)' },
+          }}
           aria-label="Logout"
         >
           Logout
@@ -277,36 +292,33 @@ const AlertsTab = ({
   alertSendSuccess,
   alertMediaInputRef,
 }) => {
-  // Validate Send Alert form
   const isSendAlertDisabled =
     !alertMessage.trim() ||
     !alertTargetRole ||
     !alertPriority;
 
-  // Priority chip color helper
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'info':
-        return 'success'; // green chip
+        return 'success';
       case 'urgent':
-        return 'error'; // red chip
+        return 'error';
       case 'important':
-        return 'warning'; // orange chip
+        return 'warning';
       default:
         return 'default';
     }
   };
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 4 }}>
-      {/* Send Alert */}
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 4, alignItems: 'stretch' }}>
       <Paper elevation={4} sx={{ p: 4, borderRadius: 3, overflow: 'hidden' }}> 
         <Typography variant="h5" gutterBottom fontWeight={700}>
           Send Alert
         </Typography>
         <Box component="form" onSubmit={handleSendAlert} noValidate>
           <TextField
-            variant="standard"
+            variant="outlined"
             fullWidth
             placeholder="Enter alert message"
             value={alertMessage}
@@ -316,65 +328,61 @@ const AlertsTab = ({
             inputProps={{ 'aria-label': 'Alert message' }}
           />
           <Box sx={{ mb: 3 }}>
-  <Typography fontWeight={600} sx={{ mb: 1 }}>
-   Quick Emergency
-  </Typography>
+            <Typography fontWeight={600} sx={{ mb: 1 }}>
+              Quick Emergency
+            </Typography>
 
-  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-    <Button
-      variant="outlined"
-      
-      size="small"
-      onClick={() => {
-        setAlertMessage("Fire reported");
-        setAlertPriority("urgent");
-      }}
-    >
-       Fire
-    </Button>
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setAlertMessage("Fire reported");
+                  setAlertPriority("urgent");
+                }}
+              >
+                Fire
+              </Button>
 
-    <Button
-      variant="outlined"
-      
-      size="small"
-      onClick={() => {
-        setAlertMessage("Medical Emergency");
-        setAlertPriority("urgent");
-      }}
-    >
-      Medical
-    </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setAlertMessage("Medical Emergency");
+                  setAlertPriority("urgent");
+                }}
+              >
+                Medical
+              </Button>
 
-    <Button
-      variant="outlined"
-      
-      size="small"
-      onClick={() => {
-        setAlertMessage("Security Issue");
-        setAlertPriority("urgent");
-      }}
-    >
-      Security
-    </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setAlertMessage("Security Issue");
+                  setAlertPriority("urgent");
+                }}
+              >
+                Security
+              </Button>
 
-    <Button
-      variant="outlined"
-      size="small"
-      onClick={() => setAlertMessage("Lost Person")}
-    >
-      Lost Person
-    </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setAlertMessage("Lost Person")}
+              >
+                Lost Person
+              </Button>
 
-    <Button
-      variant="outlined"
-      
-      size="small"
-      onClick={() => setAlertMessage("Crowd Congestion")}
-    >
-      Crowd
-    </Button>
-  </Box>
-</Box>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setAlertMessage("Crowd Congestion")}
+              >
+                Crowd
+              </Button>
+            </Box>
+          </Box>
           {alertMediaFile && (
             <Box sx={{ mb: 2 }}>
               <Typography variant="body2" sx={{ mb: 1 }}>Selected media:</Typography>
@@ -398,104 +406,93 @@ const AlertsTab = ({
             </Box>
           )}
           <Box sx={{ mb: 3 }}>
-  <Typography fontWeight={600} sx={{ mb: 1 }}>
-    Add Media
-  </Typography>
-  {/* Camera */}
-  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-  <Button
-    variant="outlined"
-    component="label"
-  >
-    Capture Photo
-    <input
-      hidden
-      type="file"
-      accept="image/*"
-      capture="environment"
-      onChange={(e) => {
-        if (e.target.files.length > 0) {
-          setAlertMediaFile(e.target.files[0]);
-        }
-      }}
-    />
-  </Button>
+            <Typography fontWeight={600} sx={{ mb: 1 }}>
+              Add Media
+            </Typography>
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Button variant="outlined" component="label">
+                Capture Photo
+                <input
+                  hidden
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => {
+                    if (e.target.files.length > 0) {
+                      setAlertMediaFile(e.target.files[0]);
+                    }
+                  }}
+                />
+              </Button>
 
-  {/* Upload */}
-  <Button
-    variant="outlined"
-    component="label"
-  >
-    Upload
-    <input
-      hidden
-      type="file"
-      accept="image/*,video/*,audio/*"
-      ref={alertMediaInputRef}
-      onChange={(e) => {
-        if (e.target.files.length > 0) {
-          setAlertMediaFile(e.target.files[0]);
-        } else {
-          setAlertMediaFile(null);
-        } 
-      }}
-    />
-  </Button>
-</Box>
-</Box>
+              <Button variant="outlined" component="label">
+                Upload
+                <input
+                  hidden
+                  type="file"
+                  accept="image/*,video/*,audio/*"
+                  ref={alertMediaInputRef}
+                  onChange={(e) => {
+                    if (e.target.files.length > 0) {
+                      setAlertMediaFile(e.target.files[0]);
+                    } else {
+                      setAlertMediaFile(null);
+                    } 
+                  }}
+                />
+              </Button>
+            </Box>
+          </Box>
           <Box sx={{ mb: 3 }}>
-  <Typography fontWeight={600} sx={{ mb: 1 }}>
-    Send To
-  </Typography>
+            <Typography fontWeight={600} sx={{ mb: 1 }}>
+              Send To
+            </Typography>
 
-  <Box sx={{ display: "flex", gap: 1 }}>
-    {["all", "head", "room", "ground"].map((role) => (
-      <Button
-        key={role}
-        variant={alertTargetRole === role ? "contained" : "outlined"}
-        onClick={() => setAlertTargetRole(role)}
-      >
-        {role.toUpperCase()}
-      </Button>
-    ))}
-  </Box>
-</Box>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              {["all", "head", "room", "ground"].map((role) => (
+                <Button
+                  key={role}
+                  variant={alertTargetRole === role ? "contained" : "outlined"}
+                  onClick={() => setAlertTargetRole(role)}
+                >
+                  {role.toUpperCase()}
+                </Button>
+              ))}
+            </Box>
+          </Box>
           <Box sx={{ mb: 3 }}>
-  <Typography fontWeight={600} sx={{ mb: 1 }}>
-    Priority
-  </Typography>
+            <Typography fontWeight={600} sx={{ mb: 1 }}>
+              Priority
+            </Typography>
 
-  <Box sx={{ display: "flex", gap: 1 }}>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Button
+                variant={alertPriority === "info" ? "contained" : "outlined"}
+                color="success"
+                onClick={() => setAlertPriority("info")}
+              >
+                Info
+              </Button>
 
-    <Button
-      variant={alertPriority === "info" ? "contained" : "outlined"}
-      color="success"
-      onClick={() => setAlertPriority("info")}
-    >
-      Info
-    </Button>
+              <Button
+                variant={alertPriority === "important" ? "contained" : "outlined"}
+                color="warning"
+                onClick={() => setAlertPriority("important")}
+              >
+                Important
+              </Button>
 
-    <Button
-      variant={alertPriority === "important" ? "contained" : "outlined"}
-      color="warning"
-      onClick={() => setAlertPriority("important")}
-    >
-      Important
-    </Button>
-
-    <Button
-      variant={alertPriority === "urgent" ? "contained" : "outlined"}
-      color="error"
-      onClick={() => setAlertPriority("urgent")}
-    >
-      Urgent
-    </Button>
-
-  </Box>
-</Box>
+              <Button
+                variant={alertPriority === "urgent" ? "contained" : "outlined"}
+                color="error"
+                onClick={() => setAlertPriority("urgent")}
+              >
+                Urgent
+              </Button>
+            </Box>
+          </Box>
           <TextField
-         
-            variant="standard"
+            variant="outlined"
             required
             fullWidth
             placeholder="Enter location (optional)"
@@ -530,8 +527,7 @@ const AlertsTab = ({
         </Box>
       </Paper>
 
-      {/* Real-time Alerts Feed */}
-      <Paper elevation={4} sx={{ p: 4, borderRadius: 3, maxHeight: 460, overflowY: 'auto' }}>
+      <Paper elevation={4} sx={{ p: 4, borderRadius: 3, overflowY: 'auto' }}>
         <Typography variant="h5" gutterBottom fontWeight={700}>
           Real-time Alerts Feed
         </Typography>
@@ -608,37 +604,35 @@ const NewIncidentTab = ({
 
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 4 }}>
-      {/* Add New Incident Form */}
       <Paper elevation={4} sx={{ p: 4, borderRadius: 3 }}>
         <Typography variant="h5" gutterBottom fontWeight={700}>
           Add New Incident
         </Typography>
         <Box component="form" onSubmit={handleAddIncident} noValidate>
           <TextField
-  variant="standard"
-  fullWidth
-  placeholder="Enter incident type"
-  value={newIncidentType}
-  onChange={(e) => setNewIncidentType(e.target.value)}
-  sx={{
-    mb: 3,
-    maxWidth: '100%', // prevent overflow
-    '& .MuiInputBase-root': {
-      width: '100%',
-    },
-    '& .MuiInput-underline:before': {
-      left: 0,
-      right: 0, // keeps underline inside
-    },
-    '& .MuiInput-underline:after': {
-      left: 0,
-      right: 0, // keeps focus underline inside
-    },
-  }}
-  required
-  inputProps={{ 'aria-label': 'Incident type' }}
-/>
-
+            variant="standard"
+            fullWidth
+            placeholder="Enter incident type"
+            value={newIncidentType}
+            onChange={(e) => setNewIncidentType(e.target.value)}
+            sx={{
+              mb: 3,
+              maxWidth: '100%',
+              '& .MuiInputBase-root': {
+                width: '100%',
+              },
+              '& .MuiInput-underline:before': {
+                left: 0,
+                right: 0,
+              },
+              '& .MuiInput-underline:after': {
+                left: 0,
+                right: 0,
+              },
+            }}
+            required
+            inputProps={{ 'aria-label': 'Incident type' }}
+          />
 
           <TextField
             variant="standard"
@@ -696,7 +690,6 @@ const NewIncidentTab = ({
         </Box>
       </Paper>
 
-      {/* Recorded Incidents List */}
       <Paper elevation={4} sx={{ p: 4, borderRadius: 3, maxHeight: 620, overflowY: 'auto' }}>
         <Typography variant="h5" gutterBottom fontWeight={700}>
           Recorded Incidents
@@ -747,8 +740,6 @@ const NewIncidentTab = ({
   );
 };
 
-// AI image analysis UI removed
-
 export default function Dashboard({
   backendMessage,
   username,
@@ -785,35 +776,16 @@ export default function Dashboard({
   approvalsPending,
   meetingNotificationCount,
 }) {
-  const [activeTab, setActiveTab] = useState('alerts');
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const location = useLocation();
   const isHeadDashboard = location.pathname === '/head-dashboard';
-
-  const handleTabChange = (_event, newValue) => {
-    setActiveTab(newValue);
-  };
+  const isIncidentsPage = location.pathname === '/incidents';
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  // Helper to get alert badge color for Alerts tab
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'info':
-        return 'success'; // green chip
-      case 'urgent':
-        return 'error'; // red chip
-      case 'important':
-        return 'warning'; // orange chip
-      default:
-        return 'default';
-    }
-  };
-
-  // Keyboard escape should close mobile drawer
   useEffect(() => {
     function handleKeyUp(e) {
       if (e.key === 'Escape') setMobileOpen(false);
@@ -826,7 +798,7 @@ export default function Dashboard({
     <Box
       sx={{
         minHeight: '100vh',
-        width: '100vw',
+        width: '100%',
         bgcolor: '#f0f2f5',
         display: 'flex',
         flexDirection: 'row',
@@ -834,7 +806,6 @@ export default function Dashboard({
         overflowX: 'hidden',
       }}
     >
-      {/* Sidebar */}
       <SidebarMenu
         userRole={userRole}
         approvalsPending={approvalsPending}
@@ -844,7 +815,6 @@ export default function Dashboard({
         meetingNotificationCount={meetingNotificationCount}
       />
 
-      {/* For mobile: App bar with menu button */}
       <Box
         sx={{
           position: 'fixed',
@@ -852,31 +822,43 @@ export default function Dashboard({
           left: 0,
           right: 0,
           height: 64,
-          bgcolor: darkBlue,
-          color: 'white',
+          bgcolor: topBarBg,
+          color: topBarTextColor,
           display: { md: 'none' },
           alignItems: 'center',
           px: 2,
           zIndex: 1400,
-          boxShadow: 3,
+          boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
           justifyContent: 'space-between',
         }}
       >
         <IconButton
-          color="inherit"
           edge="start"
           onClick={handleDrawerToggle}
           aria-label="Open sidebar menu"
+          sx={{ color: '#667eea' }}
         >
           {mobileOpen ? <CloseIcon /> : <MenuIcon />}
         </IconButton>
-        <Typography variant="h6" fontWeight={500} noWrap>
-          EventGuard
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <SecurityIcon sx={{ fontSize: 22, color: '#667eea' }} />
+          <Typography
+            variant="h6"
+            fontWeight={700}
+            noWrap
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            EventGuard
+          </Typography>
+        </Box>
         <Box sx={{ width: 44 }} />
       </Box>
 
-      {/* Main area */}
       <Box
         sx={{
           flexGrow: 1,
@@ -887,95 +869,62 @@ export default function Dashboard({
           width: { xs: '100%', md: `calc(100% - ${sidebarWidth}px)` },
         }}
       >
-        {/* Top bar */}
         <Box
           sx={{
             width: '100%',
             height: 72,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: darkBlue,
-            color: 'white',
-            px: 4,
+            justifyContent: 'space-between',
+            bgcolor: topBarBg,
+            color: topBarTextColor,
+            px: { xs: 2, md: 2.5 },
             position: 'fixed',
             top: { xs: 64, md: 0 },
             left: 0,
             right: 0,
             zIndex: 1350,
-            boxShadow: 3,
+            boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
           }}
         >
-          <Box sx={{ textAlign: 'center', width: '100%' }}>
+          {/* Logo - top left */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+            <SecurityIcon sx={{ fontSize: 50, color: '#667eea' }} />
             <Typography
-              variant="h6"
+              variant="h5"
               sx={{
-                fontWeight: 800,
-                letterSpacing: 0.6,
-                lineHeight: 1.1,
+                fontWeight: 700,
+                letterSpacing: 0.4,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
               }}
             >
               EventGuard
             </Typography>
+          </Box>
+
+          {/* Welcome text + avatar - top right */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
             <Typography
-              variant="body2"
-              sx={{ opacity: 0.92, mt: 0.3 }}
+              variant="h6"
+              sx={{ fontWeight: 600, color: '#667eea' }}
               aria-live="polite"
             >
               {isHeadDashboard
                 ? `User Approvals Pending (${approvalsPending})`
                 : `Welcome, ${username} (${userRole})`}
             </Typography>
+            <Avatar
+              src={localStorage.getItem('profileAvatar') || undefined}
+              sx={{ width: 36, height: 36, bgcolor: '#667eea' }}
+            >
+              {username ? username[0]?.toUpperCase() : ''}
+            </Avatar>
           </Box>
         </Box>
 
-        {/* Tabs for navigation (only on Main Dashboard) */}
-        {!isHeadDashboard && (
-          <Box
-            sx={{
-              borderBottom: 1,
-              borderColor: 'divider',
-              mt: '64px',
-              bgcolor: 'white',
-            }}
-          >
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              textColor="primary"
-              indicatorColor="primary"
-              centered
-              aria-label="Dashboard main tabs"
-              sx={{ backgroundColor: 'white' }}
-            >
-              <Tab
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <NotificationsActiveIcon fontSize="small" />
-                    Alerts ({realtimeAlerts.length})
-                  </Box>
-                }
-                value="alerts"
-                id="tab-alerts"
-                aria-controls="tabpanel-alerts"
-              />
-              <Tab
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <AddCircleOutlineIcon fontSize="small" />
-                    New Incident ({incidents.length})
-                  </Box>
-                }
-                value="newIncident"
-                id="tab-newincident"
-                aria-controls="tabpanel-newincident"
-              />
-              {/* AI Image Analysis tab removed */}
-            </Tabs>
-          </Box>
-        )}
-
-        {/* Main content container */}
         <Box
           sx={{
             flexGrow: 1,
@@ -985,57 +934,58 @@ export default function Dashboard({
             mx: 'auto',
             overflowY: 'auto',
             bgcolor: 'background.default',
-            mt: isHeadDashboard ? '72px' : 0,
+            mt: '72px',
             minHeight: 'calc(100vh - 72px)',
           }}
           role="main"
         >
           {isHeadDashboard ? (
-            // Show head dashboard content as route
             <Routes>
               <Route path="/head-dashboard" element={<HeadDashboard />} />
               <Route path="*" element={<Navigate to="/head-dashboard" />} />
             </Routes>
+          ) : isIncidentsPage ? (
+            <Routes>
+              <Route
+                path="/incidents"
+                element={
+                  <NewIncidentTab
+                    newIncidentType={newIncidentType}
+                    setNewIncidentType={setNewIncidentType}
+                    newIncidentLocation={newIncidentLocation}
+                    setNewIncidentLocation={setNewIncidentLocation}
+                    newIncidentMediaFile={newIncidentMediaFile}
+                    setNewIncidentMediaFile={setNewIncidentMediaFile}
+                    handleAddIncident={handleAddIncident}
+                    incidents={incidents}
+                    loadingIncidents={loadingIncidents}
+                    incidentsError={incidentsError}
+                    fetchIncidents={fetchIncidents}
+                    handleDeleteIncident={handleDeleteIncident}
+                    incidentMediaInputRef={incidentMediaInputRef}
+                  />
+                }
+              />
+              <Route path="*" element={<Navigate to="/incidents" />} />
+            </Routes>
           ) : (
-            <>
-              {activeTab === 'alerts' && (
-                <AlertsTab
-                  alertMessage={alertMessage}
-                  setAlertMessage={setAlertMessage}
-                  alertMediaFile={alertMediaFile}
-                  setAlertMediaFile={setAlertMediaFile}
-                  alertTargetRole={alertTargetRole}
-                  setAlertTargetRole={setAlertTargetRole}
-                  alertPriority={alertPriority}
-                  setAlertPriority={setAlertPriority}
-                  alertLocationTag={alertLocationTag}
-                  setAlertLocationTag={setAlertLocationTag}
-                  handleSendAlert={handleSendAlert}
-                  realtimeAlerts={realtimeAlerts}
-                  alertSendError={alertSendError}
-                  alertSendSuccess={alertSendSuccess}
-                  alertMediaInputRef={alertMediaInputRef}
-                />
-              )}
-              {activeTab === 'newIncident' && (
-                <NewIncidentTab
-                  newIncidentType={newIncidentType}
-                  setNewIncidentType={setNewIncidentType}
-                  newIncidentLocation={newIncidentLocation}
-                  setNewIncidentLocation={setNewIncidentLocation}
-                  newIncidentMediaFile={newIncidentMediaFile}
-                  setNewIncidentMediaFile={setNewIncidentMediaFile}
-                  handleAddIncident={handleAddIncident}
-                  incidents={incidents}
-                  loadingIncidents={loadingIncidents}
-                  incidentsError={incidentsError}
-                  fetchIncidents={fetchIncidents}
-                  handleDeleteIncident={handleDeleteIncident}
-                  incidentMediaInputRef={incidentMediaInputRef}
-                />
-              )}
-              {/* AI image analysis tab content removed */}
-            </>
+            <AlertsTab
+              alertMessage={alertMessage}
+              setAlertMessage={setAlertMessage}
+              alertMediaFile={alertMediaFile}
+              setAlertMediaFile={setAlertMediaFile}
+              alertTargetRole={alertTargetRole}
+              setAlertTargetRole={setAlertTargetRole}
+              alertPriority={alertPriority}
+              setAlertPriority={setAlertPriority}
+              alertLocationTag={alertLocationTag}
+              setAlertLocationTag={setAlertLocationTag}
+              handleSendAlert={handleSendAlert}
+              realtimeAlerts={realtimeAlerts}
+              alertSendError={alertSendError}
+              alertSendSuccess={alertSendSuccess}
+              alertMediaInputRef={alertMediaInputRef}
+            />
           )}
         </Box>
       </Box>

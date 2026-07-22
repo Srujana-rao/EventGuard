@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
-const passport = require('../passport'); // Adjust path to your passport config
 
 const User = require('../models/User');
 
@@ -33,35 +32,6 @@ const authorizeRole = (roles) => (req, res, next) => {
   }
   next();
 };
-
-
-// ==========================
-// GOOGLE OAUTH ROUTES
-// ==========================
-
-// Initiate Google OAuth login
-router.get('/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
-
-// Google OAuth callback
-router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login', session: false }),
-  (req, res) => {
-    // Generate JWT token for authenticated user
-    const payload = {
-      user: {
-        id: req.user.id,
-        role: req.user.role
-      }
-    };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' });
-
-    // Redirect to frontend with token in query parameters
-    // Update URL if your frontend runs on different origin/port
-    res.redirect(`http://localhost:5173/social-success?token=${token}`);
-  }
-);
 
 
 // ==========================
@@ -93,8 +63,8 @@ router.post(
         username,
         email,
         password,
-        role: 'ground',  // Default role
-        isApproved: false // Needs approval by 'head'
+        role: 'ground',
+        isApproved: false
       });
 
       const salt = await bcrypt.genSalt(10);
@@ -231,6 +201,31 @@ router.post('/approve-user/:id', auth, authorizeRole(['head']), async (req, res)
   }
 });
 
+// REQUEST ROLE CHANGE — awaiting head approval
+router.post('/request-role-change', auth, async (req, res) => {
+  const { role } = req.body;
+  if (!['room', 'ground'].includes(role)) {
+    return res.status(400).json({ msg: 'Invalid role requested' });
+  }
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+
+    user.pendingRole = role;
+    user.roleChangeStatus = 'pending';
+    await user.save();
+
+    res.json({
+      msg: 'Role change requested, awaiting head approval.',
+      pendingRole: user.pendingRole,
+      roleChangeStatus: user.roleChangeStatus,
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
 
 // ==================
 // FORGOT PASSWORD
@@ -243,18 +238,15 @@ router.post('/forgot-password', async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      // Respond success regardless to avoid email enumeration
       return res.status(200).json({ msg: 'If the email is registered, a reset link has been sent.' });
     }
 
-    // Generate reset token
     const token = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour expiry
+    user.resetPasswordExpires = Date.now() + 3600000;
 
     await user.save();
 
-    // Configure nodemailer
     const transporter = nodemailer.createTransport({
       service: 'Gmail',
       auth: {
@@ -263,7 +255,7 @@ router.post('/forgot-password', async (req, res) => {
       }
     });
 
-    const resetUrl = `http://localhost:5173/reset-password/${token}`; // Or your frontend URL
+    const resetUrl = `http://localhost:5173/reset-password/${token}`;
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
