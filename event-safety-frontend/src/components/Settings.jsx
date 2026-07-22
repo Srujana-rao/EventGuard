@@ -179,7 +179,7 @@ function ProfileSection({ onProfileUpdate }) {
         );
         setPendingRole(selectedRole);
         setRoleChangeStatus('pending');
-        setMessage('Waiting for head approval.');
+        setMessage('Waiting for Head approval.');
       } catch (err) {
         setMessage(err.response?.data?.msg || 'Failed to request role change.');
       }
@@ -243,7 +243,7 @@ function ProfileSection({ onProfileUpdate }) {
 
       {roleChangeStatus === 'pending' && (
         <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
-          Waiting for head approval (requested: {pendingRole})
+          Waiting for Head approval (Requested: {pendingRole})
         </Typography>
       )}
       {message && roleChangeStatus !== 'pending' && (
@@ -457,9 +457,7 @@ function AccountSection() {
         <Button variant="outlined" size="medium" onClick={handleChangePassword}>
           Change Password
         </Button>
-        <Button variant="outlined" size="medium" onClick={handleLogout}>
-          Logout
-        </Button>
+       
         <Button variant="outlined" size="medium" color="error" onClick={handleDelete}>
           Delete Account
         </Button>

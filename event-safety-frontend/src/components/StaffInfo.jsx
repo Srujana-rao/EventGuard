@@ -52,6 +52,17 @@ export default function StaffInfo() {
   const roomStaff = filteredUsers.filter((u) => u.role === 'room');
   const groundStaff = filteredUsers.filter((u) => u.role === 'ground');
 
+  const columnsByRole = {
+    head: { key: 'head', title: 'Head Staff', staffList: headStaff },
+    room: { key: 'room', title: 'Room Staff', staffList: roomStaff },
+    ground: { key: 'ground', title: 'Ground Staff', staffList: groundStaff },
+  };
+
+  const columnsToShow =
+    roleFilter === 'all'
+      ? [columnsByRole.head, columnsByRole.room, columnsByRole.ground]
+      : [columnsByRole[roleFilter]];
+
   const renderColumn = (title, staffList) => (
     <Box sx={{ flex: 1, minWidth: 0 }}>
       <Typography variant="h6" fontWeight={600} gutterBottom>
@@ -91,7 +102,7 @@ export default function StaffInfo() {
 
   return (
     <Paper elevation={4} sx={{ p: 4, borderRadius: 3 }}>
-      <Typography variant="h4" gutterBottom fontWeight={700}>
+      <Typography variant="h5" gutterBottom fontWeight={700}>
         Staff Overview
       </Typography>
 
@@ -137,10 +148,21 @@ export default function StaffInfo() {
       )}
 
       {!loading && !error && (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 4 }}>
-          {renderColumn('Head Staff', headStaff)}
-          {renderColumn('Room Staff', roomStaff)}
-          {renderColumn('Ground Staff', groundStaff)}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: roleFilter === 'all' ? '1fr 1fr 1fr' : '1fr',
+            },
+            gap: 4,
+          }}
+        >
+          {columnsToShow.map((col) => (
+            <React.Fragment key={col.key}>
+              {renderColumn(col.title, col.staffList)}
+            </React.Fragment>
+          ))}
         </Box>
       )}
     </Paper>
