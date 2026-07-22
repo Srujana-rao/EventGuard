@@ -5,8 +5,10 @@ const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const mongoose = require('mongoose');
 
 const User = require('../models/User');
+const Meeting = require('../models/Meeting');
 
 
 // Middleware to protect routes by JWT token
@@ -226,6 +228,35 @@ router.post('/request-role-change', auth, async (req, res) => {
   }
 });
 
+
+// ==================
+// DELETE ACCOUNT (permanent)
+// ==================
+router.delete('/delete-account', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    const username = user.username;
+
+    // Remove associated meetings created by this user
+    await Meeting.deleteMany({ createdBy: username });
+
+    // Remove associated alerts sent by this user (model is registered in server.js)
+    if (mongoose.models.Alert) {
+      await mongoose.model('Alert').deleteMany({ sender: username });
+    }
+
+    await User.findByIdAndDelete(user.id);
+
+    res.json({ msg: 'Account permanently deleted' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
 
 // ==================
 // FORGOT PASSWORD

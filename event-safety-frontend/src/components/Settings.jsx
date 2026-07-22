@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import Cropper from 'react-easy-crop';
 import {
   Box,
   Paper,
@@ -9,8 +10,6 @@ import {
   Avatar,
   Switch,
   FormControlLabel,
-  RadioGroup,
-  Radio,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -19,10 +18,44 @@ import {
   Tabs,
   Tab,
   MenuItem,
+  Slider,
+  CircularProgress,
 } from '@mui/material';
-import { useThemeMode } from '../ThemeModeContext';
 
-const sections = ['Profile', 'Notifications', 'Appearance', 'Account'];
+const sections = ['Profile', 'Notifications', 'Account'];
+
+function createImage(url) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener('load', () => resolve(image));
+    image.addEventListener('error', (error) => reject(error));
+    image.src = url;
+  });
+}
+
+async function getCroppedImg(imageSrc, pixelCrop) {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  const size = Math.min(pixelCrop.width, pixelCrop.height);
+  canvas.width = size;
+  canvas.height = size;
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    size,
+    size
+  );
+
+  return canvas.toDataURL('image/jpeg', 0.92);
+}
 
 function ProfileSection({ onProfileUpdate }) {
   const storedUser = useMemo(() => {
@@ -45,6 +78,14 @@ function ProfileSection({ onProfileUpdate }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
+  // Crop dialog state
+  const [cropOpen, setCropOpen] = useState(false);
+  const [rawImage, setRawImage] = useState('');
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [cropping, setCropping] = useState(false);
+
   useEffect(() => {
     const fetchMe = async () => {
       try {
@@ -61,14 +102,52 @@ function ProfileSection({ onProfileUpdate }) {
     fetchMe();
   }, []);
 
-  const handleAvatarChange = (e) => {
+  const onCropComplete = useCallback((_croppedArea, pixels) => {
+    setCroppedAreaPixels(pixels);
+  }, []);
+
+  const handleAvatarSelect = (e) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
+
     const reader = new FileReader();
     reader.onloadend = () => {
-      setAvatarPreview(reader.result);
+      setRawImage(reader.result);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCroppedAreaPixels(null);
+      setCropOpen(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleConfirmCrop = async () => {
+    if (!rawImage || !croppedAreaPixels) return;
+    setCropping(true);
+    try {
+      const cropped = await getCroppedImg(rawImage, croppedAreaPixels);
+      setAvatarPreview(cropped);
+      setCropOpen(false);
+      setRawImage('');
+    } catch {
+      setMessage('Failed to process image. Please try again.');
+    } finally {
+      setCropping(false);
+    }
+  };
+
+  const handleCancelCrop = () => {
+    setCropOpen(false);
+    setRawImage('');
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+  };
+
+  const handleDeletePicture = () => {
+    setAvatarPreview('');
+    localStorage.removeItem('profileAvatar');
+    setMessage('Profile picture removed.');
   };
 
   const handleSave = async () => {
@@ -83,6 +162,8 @@ function ProfileSection({ onProfileUpdate }) {
     localStorage.setItem('user', JSON.stringify(updatedUser));
     if (avatarPreview) {
       localStorage.setItem('profileAvatar', avatarPreview);
+    } else {
+      localStorage.removeItem('profileAvatar');
     }
     if (onProfileUpdate) {
       onProfileUpdate(updatedUser);
@@ -102,6 +183,8 @@ function ProfileSection({ onProfileUpdate }) {
       } catch (err) {
         setMessage(err.response?.data?.msg || 'Failed to request role change.');
       }
+    } else {
+      setMessage('Profile saved.');
     }
 
     setTimeout(() => setSaving(false), 300);
@@ -112,7 +195,7 @@ function ProfileSection({ onProfileUpdate }) {
       <Typography variant="h5" fontWeight={700} gutterBottom>
         Profile
       </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
         <Avatar
           src={avatarPreview || undefined}
           sx={{ width: 64, height: 64, bgcolor: 'primary.main' }}
@@ -120,9 +203,14 @@ function ProfileSection({ onProfileUpdate }) {
           {(!avatarPreview && name && name[0]?.toUpperCase()) || ''}
         </Avatar>
         <Button variant="outlined" component="label">
-          Upload picture
-          <input type="file" hidden accept="image/*" onChange={handleAvatarChange} />
+          Upload Picture
+          <input type="file" hidden accept="image/*" onChange={handleAvatarSelect} />
         </Button>
+        {avatarPreview && (
+          <Button variant="outlined" color="error" onClick={handleDeletePicture}>
+            Delete Picture
+          </Button>
+        )}
       </Box>
       <TextField
         label="Name"
@@ -173,6 +261,64 @@ function ProfileSection({ onProfileUpdate }) {
       >
         {saving ? 'Saving...' : 'Save changes'}
       </Button>
+
+      <Dialog open={cropOpen} onClose={handleCancelCrop} maxWidth="sm" fullWidth>
+        <DialogTitle>Adjust profile picture</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Drag to reposition, use the slider to zoom, then confirm to preview the cropped image.
+          </DialogContentText>
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              height: 320,
+              bgcolor: '#111',
+              borderRadius: 1,
+              overflow: 'hidden',
+            }}
+          >
+            {rawImage && (
+              <Cropper
+                image={rawImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            )}
+          </Box>
+          <Box sx={{ mt: 3, px: 1 }}>
+            <Typography variant="body2" gutterBottom>
+              Zoom
+            </Typography>
+            <Slider
+              value={zoom}
+              min={1}
+              max={3}
+              step={0.05}
+              onChange={(_e, value) => setZoom(value)}
+              aria-label="Zoom"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelCrop} disabled={cropping}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleConfirmCrop}
+            disabled={cropping || !croppedAreaPixels}
+          >
+            {cropping ? <CircularProgress size={20} /> : 'Use photo'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
@@ -207,7 +353,7 @@ function NotificationsSection() {
 
   const handleToggleSystem = (checked) => {
     setSystemAlerts(checked);
-    savePrefs({ emailNotifs, system: checked, meetings: meetingNotifs });
+    savePrefs({ email: emailNotifs, system: checked, meetings: meetingNotifs });
   };
 
   const handleToggleMeetings = (checked) => {
@@ -253,35 +399,13 @@ function NotificationsSection() {
   );
 }
 
-function AppearanceSection() {
-  const { preference, setMode } = useThemeMode();
-
-  return (
-    <Box>
-      <Typography variant="h5" fontWeight={700} gutterBottom>
-        Appearance
-      </Typography>
-      <Typography variant="body2" sx={{ mb: 2 }}>
-        Choose how the dashboard should look.
-      </Typography>
-      <RadioGroup
-        value={preference}
-        onChange={(e) => setMode(e.target.value)}
-        name="theme-selection"
-      >
-        <FormControlLabel value="light" control={<Radio />} label="Light" />
-        <FormControlLabel value="dark" control={<Radio />} label="Dark" />
-        <FormControlLabel value="system" control={<Radio />} label="System" />
-      </RadioGroup>
-    </Box>
-  );
-}
-
 function AccountSection() {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const handleChangePassword = () => {
-    window.location.href = '/forgot-password';
+    window.location.href = '/change-password';
   };
 
   const handleLogout = () => {
@@ -290,13 +414,31 @@ function AccountSection() {
   };
 
   const handleDelete = () => {
+    setDeleteError('');
     setConfirmOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    localStorage.clear();
-    setConfirmOpen(false);
-    window.location.href = '/';
+  const handleConfirmDelete = async () => {
+    setDeleting(true);
+    setDeleteError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete('http://localhost:5000/api/auth/delete-account', {
+        headers: { 'x-auth-token': token },
+      });
+
+      // Clear profile picture and all local session data
+      localStorage.removeItem('profileAvatar');
+      localStorage.clear();
+      setConfirmOpen(false);
+      window.location.href = '/';
+    } catch (err) {
+      setDeleteError(
+        err.response?.data?.msg || 'Failed to delete account. Please try again.'
+      );
+      setDeleting(false);
+    }
   };
 
   return (
@@ -313,27 +455,40 @@ function AccountSection() {
         }}
       >
         <Button variant="outlined" size="medium" onClick={handleChangePassword}>
-          Change password
+          Change Password
         </Button>
         <Button variant="outlined" size="medium" onClick={handleLogout}>
           Logout
         </Button>
         <Button variant="outlined" size="medium" color="error" onClick={handleDelete}>
-          Delete account
+          Delete Account
         </Button>
       </Box>
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>Delete account</DialogTitle>
+      <Dialog
+        open={confirmOpen}
+        onClose={() => !deleting && setConfirmOpen(false)}
+      >
+        <DialogTitle>Delete account permanently?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            This will remove your local data and log you out. Continue?
+            This action is permanent and cannot be undone. Your account and all
+            associated data will be permanently deleted from the database,
+            including your profile picture if one exists. You will be logged out
+            and redirected to the login page.
           </DialogContentText>
+          {deleteError && (
+            <Typography variant="body2" color="error" sx={{ mt: 2 }}>
+              {deleteError}
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
-          <Button color="error" onClick={handleConfirmDelete}>
-            Delete
+          <Button onClick={() => setConfirmOpen(false)} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button color="error" onClick={handleConfirmDelete} disabled={deleting}>
+            {deleting ? 'Deleting...' : 'Delete permanently'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -350,8 +505,6 @@ export default function Settings() {
         return <ProfileSection />;
       case 'Notifications':
         return <NotificationsSection />;
-      case 'Appearance':
-        return <AppearanceSection />;
       case 'Account':
         return <AccountSection />;
       default:

@@ -1,4 +1,4 @@
-// src/pages/ForgotPassword.jsx
+// src/components/ChangePassword.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -18,7 +18,7 @@ import {
   Security,
 } from '@mui/icons-material';
 
-export default function ForgotPassword() {
+export default function ChangePassword() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -43,7 +43,7 @@ export default function ForgotPassword() {
     }
   };
 
-  // Same shared input styling as Login.jsx / Signup.jsx
+  // Same shared input styling as Login.jsx / Signup.jsx / ForgotPassword.jsx
   const inputSx = {
     backgroundColor: '#f9fafb',
     '& .MuiOutlinedInput-root': {
@@ -130,7 +130,7 @@ export default function ForgotPassword() {
           </Box>
         </Box>
 
-        {/* Right Side - Forgot Password Form */}
+        {/* Right Side - Change Password Form */}
         <Box
           sx={{
             flex: 1,
@@ -149,8 +149,7 @@ export default function ForgotPassword() {
                 component="h1"
                 sx={{ fontWeight: 700, color: '#333', mb: 0.5 }}
               >
-                Forgot Password?
-               
+                Change Password
               </Typography>
               <Typography variant="body2" sx={{ color: '#666', fontSize: '0.9rem' }}>
                 Enter your email to receive a password reset link
@@ -221,7 +220,9 @@ export default function ForgotPassword() {
 
             <Box textAlign="center">
               <Link
-                href="/login"
+                component="button"
+                type="button"
+                onClick={() => navigate('/settings')}
                 sx={{
                   color: '#667eea',
                   textDecoration: 'none',
@@ -229,11 +230,14 @@ export default function ForgotPassword() {
                   fontWeight: 600,
                   display: 'inline-flex',
                   alignItems: 'center',
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
                   '&:hover': { textDecoration: 'underline' },
                 }}
               >
                 <ArrowBack sx={{ mr: 0.5, fontSize: '1rem' }} />
-                Back to Login
+                Back to Settings
               </Link>
             </Box>
           </Box>

@@ -8,6 +8,7 @@ import Signup from './components/Signup';
 import Login from './components/Login';
 import HeadDashboard from './components/HeadDashboard'; // Head Dashboard Component
 import ForgotPassword from './components/ForgotPassword';
+import ChangePassword from './components/ChangePassword';
 import ResetPassword from './components/ResetPassword';
 import Dashboard from './components/Dashboard';
 import StaffInfo from './components/StaffInfo';
@@ -387,6 +388,7 @@ useEffect(() => {
         <Route path="/signup" element={<Signup setAuth={handleSetAuth} />} />
         <Route path="/login" element={<Login setAuth={handleSetAuth} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         {/* Social sign-in callback removed */}
         <Route
