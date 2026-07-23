@@ -14,6 +14,7 @@ import StaffInfo from './components/StaffInfo';
 import Meetings from './components/Meetings';
 import DashboardShell from './components/DashboardShell';
 import Settings from './components/Settings';
+import PendingApproval from './components/PendingApproval';
 
 // Socket.IO client instance
 import { socket } from './socket';
@@ -47,6 +48,7 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const config = token ? { headers: { 'x-auth-token': token } } : {};
 
     if (!token || !isAuthenticated) {
       return undefined;
@@ -75,6 +77,16 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
       setMeetingNotificationCount((prev) => prev + 1);
     };
 
+    const handleApprovalUpdate = async () => {
+      if (userRole !== 'head') return;
+      try {
+        const summaryRes = await axios.get(`${API_BASE_URL}/auth/pending-summary`, config);
+        setApprovalsPending(summaryRes.data?.total || 0);
+      } catch {
+        // non-critical
+      }
+    };
+
     const handleMeetingDeleted = () => {
       setMeetingNotificationCount((prev) => (prev > 0 ? prev - 1 : 0));
     };
@@ -86,6 +98,7 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
     socket.on('authenticated', handleAuthenticated);
     socket.on('receive-alert', handleReceiveAlert);
     socket.on('new-meeting', handleNewMeeting);
+    socket.on('pending-summary-update', handleApprovalUpdate);
     socket.on('meeting-deleted', handleMeetingDeleted);
     socket.on('disconnect', handleDisconnect);
 
@@ -98,10 +111,11 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
       socket.off('authenticated', handleAuthenticated);
       socket.off('receive-alert', handleReceiveAlert);
       socket.off('new-meeting', handleNewMeeting);
+      socket.off('pending-summary-update', handleApprovalUpdate);
       socket.off('meeting-deleted', handleMeetingDeleted);
       socket.off('disconnect', handleDisconnect);
     };
-  }, [isAuthenticated, username]);
+  }, [isAuthenticated, username, userRole]);
 
   // Send Alert Handler
   const handleSendAlert = async (e) => {
@@ -233,7 +247,7 @@ function getStoredAuth() {
   try {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
-    if (!token || !user) {
+    if (!token || token === 'undefined' || token === 'null' || !user) {
       return { isAuthenticated: false, userRole: null, username: null };
     }
     const parsedUser = JSON.parse(user);
@@ -324,6 +338,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/signup" element={<Signup setAuth={handleSetAuth} />} />
+        <Route path="/pending-approval" element={<PendingApproval />} />
         <Route path="/login" element={<Login setAuth={handleSetAuth} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/change-password" element={<ChangePassword />} />

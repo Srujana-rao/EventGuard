@@ -10,6 +10,11 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const Meeting = require('../models/Meeting');
 
+let io;
+const setIo = (serverIo) => {
+  io = serverIo;
+};
+
 
 // Middleware to protect routes by JWT token
 const auth = (req, res, next) => {
@@ -73,6 +78,10 @@ router.post(
       user.password = await bcrypt.hash(password, salt);
 
       await user.save();
+
+      if (io) {
+        io.to('head').emit('pending-summary-update');
+      }
 
       res.status(201).json({
         msg: 'Registration successful! Awaiting head approval.',
@@ -225,6 +234,10 @@ router.post('/request-role-change', auth, async (req, res) => {
     user.pendingRole = role;
     user.roleChangeStatus = 'pending';
     await user.save();
+
+    if (io) {
+      io.to('head').emit('pending-summary-update');
+    }
 
     res.json({
       msg: 'Role change requested, awaiting head approval. Your current role is unchanged.',
@@ -445,4 +458,5 @@ module.exports = {
   router,
   auth,
   authorizeRole,
+  setIo,
 };

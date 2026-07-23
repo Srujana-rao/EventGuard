@@ -15,6 +15,7 @@ import {
   Chip,
 } from '@mui/material';
 import axios from 'axios';
+import { socket } from '../socket';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -136,6 +137,18 @@ const HeadDashboard = ({ userRole }) => {
       setLoading(false);
     }
   }, [userRole]);
+
+  useEffect(() => {
+    const handleApprovalRequested = () => {
+      fetchAll();
+    };
+
+    socket.on('pending-summary-update', handleApprovalRequested);
+
+    return () => {
+      socket.off('pending-summary-update', handleApprovalRequested);
+    };
+  }, []);
 
   if (loading && !error) {
     return (

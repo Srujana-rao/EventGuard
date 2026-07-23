@@ -84,24 +84,33 @@ function SidebarMenu({
       badgeContent: meetingNotificationCount,
       active: matchMeetings,
     },
-    {
-      label: 'Settings',
-      to: '/settings',
-      icon: <SettingsIcon />,
-      showBadge: false,
-      badgeContent: null,
-      active: matchSettings,
-    },
   ];
 
   if (userRole === 'head') {
-    buttons.push({
+    buttons.unshift({
       label: 'User Approvals',
       to: '/head-dashboard',
       icon: <AdminPanelSettingsIcon />,
       showBadge: approvalsPending > 0,
       badgeContent: approvalsPending,
       active: matchHeadDashboard,
+    });
+    buttons.push({
+      label: 'Settings',
+      to: '/settings',
+      icon: <SettingsIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchSettings,
+    });
+  } else {
+    buttons.push({
+      label: 'Settings',
+      to: '/settings',
+      icon: <SettingsIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchSettings,
     });
   }
 
@@ -337,7 +346,17 @@ const AlertsTab = ({
             placeholder="Enter alert message"
             value={alertMessage}
             onChange={(e) => setAlertMessage(e.target.value)}
-            sx={{ mb: 3 }}
+            sx={{
+              mb: 3,
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'white',
+                borderRadius: 2,
+              },
+              '& .MuiOutlinedInput-input': {
+                px: 1.5,
+                py: 1.25,
+              },
+            }}
             required
             inputProps={{ 'aria-label': 'Alert message' }}
           />

@@ -47,7 +47,15 @@ function SidebarMenu({
   const matchHeadDashboard = location.pathname === '/head-dashboard';
   const matchSettings = location.pathname === '/settings';
 
-  const buttons = [
+  const headButtons = [
+    {
+      label: 'User Approvals',
+      to: '/head-dashboard',
+      icon: <AdminPanelSettingsIcon />,
+      showBadge: approvalsPending > 0,
+      badgeContent: approvalsPending,
+      active: matchHeadDashboard,
+    },
     {
       label: 'Main Dashboard',
       to: '/dashboard',
@@ -82,16 +90,40 @@ function SidebarMenu({
     },
   ];
 
-  if (userRole === 'head') {
-    buttons.push({
-      label: 'User Approvals',
-      to: '/head-dashboard',
-      icon: <AdminPanelSettingsIcon />,
-      showBadge: approvalsPending > 0,
-      badgeContent: approvalsPending,
-      active: matchHeadDashboard,
-    });
-  }
+  const buttons = userRole === 'head' ? headButtons : [
+    {
+      label: 'Main Dashboard',
+      to: '/dashboard',
+      icon: <NotificationsActiveIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchDashboard,
+    },
+    {
+      label: 'Staff Info',
+      to: '/staff-info',
+      icon: <GroupsIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchStaffInfo,
+    },
+    {
+      label: 'Meetings',
+      to: '/meetings',
+      icon: <EventNoteIcon />,
+      showBadge: meetingsPending > 0,
+      badgeContent: meetingsPending,
+      active: matchMeetings,
+    },
+    {
+      label: 'Settings',
+      to: '/settings',
+      icon: <SettingsIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchSettings,
+    },
+  ];
 
   return (
     <>

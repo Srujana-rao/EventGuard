@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Stack from '@mui/material/Stack';
 import axios from 'axios';
 import {
   Box,
@@ -45,6 +44,7 @@ export default function Signup({ setAuth }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   // Field-level validation errors (frontend only — doesn't touch backend logic)
   const [fieldErrors, setFieldErrors] = useState({ email: '', password: '' });
   const navigate = useNavigate();
@@ -131,11 +131,13 @@ export default function Signup({ setAuth }) {
         password: formData.password,
       });
 
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-      setAuth(true);
-      navigate('/dashboard');
+      setSuccessMessage(res.data.msg || 'Registration successful! Awaiting head approval.');
+      setError('');
+      setFormData({ username: '', email: '', password: '', confirmPassword: '' });
+      navigate('/pending-approval');
+      return;
     } catch (err) {
+      setSuccessMessage('');
       setError(err.response?.data?.msg || 'Signup failed. Please try again.');
     } finally {
       setLoading(false);
@@ -266,6 +268,14 @@ export default function Signup({ setAuth }) {
                 sx={{ mb: 2, borderRadius: 2, fontSize: '0.85rem' }}
               >
                 {error}
+              </Alert>
+            )}
+            {successMessage && (
+              <Alert
+                severity="success"
+                sx={{ mb: 2, borderRadius: 2, fontSize: '0.85rem' }}
+              >
+                {successMessage}
               </Alert>
             )}
 

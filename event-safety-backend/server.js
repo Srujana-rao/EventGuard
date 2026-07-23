@@ -225,6 +225,8 @@ io.on('connection', (socket) => {
 });
 // ------------------------------------------------------------
 
+authRoutes.setIo(io);
+
 // --- API Routes ---
 app.get('/', (req, res) => {
     res.send('Event Safety Backend API is running!');
@@ -322,7 +324,7 @@ app.get('/api/alerts', async (req, res) => {
 // --- API Route to fetch all users (username + role + status) ---
 app.get('/api/users', async (_req, res) => {
     try {
-        const users = await User.find().select('username role');
+        const users = await User.find({ isApproved: true }).select('username role');
         const onlineUserIds = new Set(
             Array.from(socketToUserId.values()).map((id) => String(id))
         );
