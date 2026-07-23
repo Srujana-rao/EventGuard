@@ -15,6 +15,7 @@ import Meetings from './components/Meetings';
 import DashboardShell from './components/DashboardShell';
 import Settings from './components/Settings';
 import PendingApproval from './components/PendingApproval';
+import SocialSuccess from './components/SocialSuccess';
 
 // Socket.IO client instance
 import { socket } from './socket';
@@ -341,6 +342,7 @@ function App() {
         <Route path="/pending-approval" element={<PendingApproval />} />
         <Route path="/login" element={<Login setAuth={handleSetAuth} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/social-success" element={<SocialSuccess setAuth={handleSetAuth} />} />
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         {/* Social sign-in callback removed */}

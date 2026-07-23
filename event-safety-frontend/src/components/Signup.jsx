@@ -146,8 +146,8 @@ export default function Signup({ setAuth }) {
 
   // Google signup placeholder — wire up to your actual OAuth flow when ready
   const handleGoogleSignup = () => {
-    console.log('Google sign-up clicked — connect this to your OAuth flow');
-  };
+  window.location.href = 'http://localhost:5000/api/auth/google';
+};
 
   // Same shared input styling as Login.jsx
   const inputSx = {

@@ -123,8 +123,8 @@ export default function Login({ setAuth }) {
 
   // Google login placeholder — wire up to your actual OAuth flow when ready
   const handleGoogleLogin = () => {
-    console.log('Google sign-in clicked — connect this to your OAuth flow');
-  };
+  window.location.href = 'http://localhost:5000/api/auth/google';
+};
 
   // Shared styling for the rounded, icon-adorned inputs (matches reference layout)
   const inputSx = {

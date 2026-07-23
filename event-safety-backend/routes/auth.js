@@ -9,6 +9,7 @@ const mongoose = require('mongoose');
 
 const User = require('../models/User');
 const Meeting = require('../models/Meeting');
+const passport = require('../passport');
 
 let io;
 const setIo = (serverIo) => {
@@ -97,6 +98,28 @@ router.post(
       console.error(err.message);
       res.status(500).send('Server error');
     }
+  }
+);
+
+// ==========================
+// GOOGLE OAUTH ROUTES
+// ==========================
+
+router.get('/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+router.get('/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login', session: false }),
+  (req, res) => {
+    const payload = {
+      user: {
+        id: req.user.id,
+        role: req.user.role
+      }
+    };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' });
+    res.redirect(`http://localhost:5173/social-success?token=${token}&username=${encodeURIComponent(req.user.username)}&role=${req.user.role}`);
   }
 );
 

@@ -1,6 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const User = require('./models/User'); // Adjust path if necessary
+const User = require('./models/User');
 
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
@@ -9,17 +9,14 @@ passport.use(new GoogleStrategy({
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      // Extract email from profile
       const email = profile.emails[0].value;
-      // Find user by email
       let user = await User.findOne({ email });
 
       if (!user) {
-        // Create new user (auto-approved)
         user = new User({
           username: profile.displayName,
           email,
-          password: '', // No password set for OAuth users
+          password: '',
           role: 'ground',
           isApproved: true
         });
@@ -32,5 +29,19 @@ passport.use(new GoogleStrategy({
     }
   }
 ));
+
+// Required for passport.session() to work — stores/retrieves user by Mongo _id
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
+});
 
 module.exports = passport;
