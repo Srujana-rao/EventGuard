@@ -185,6 +185,88 @@ router.post(
   }
 );
 
+// UPDATE CURRENT USER PROFILE
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    const updates = {};
+    if (typeof req.body.username === 'string') {
+      const trimmedUsername = req.body.username.trim();
+      if (!trimmedUsername) {
+        return res.status(400).json({ msg: 'Username is required' });
+      }
+
+      if (trimmedUsername !== user.username) {
+        const existingUser = await User.findOne({ username: trimmedUsername, _id: { $ne: user._id } });
+        if (existingUser) {
+          return res.status(400).json({ msg: 'Username already in use' });
+        }
+      }
+
+      updates.username = trimmedUsername;
+    }
+
+    if (typeof req.body.email === 'string') {
+      const normalizedEmail = req.body.email.trim().toLowerCase();
+      if (!normalizedEmail) {
+        return res.status(400).json({ msg: 'Email is required' });
+      }
+
+      if (normalizedEmail !== user.email) {
+        const existingEmail = await User.findOne({ email: normalizedEmail, _id: { $ne: user._id } });
+        if (existingEmail) {
+          return res.status(400).json({ msg: 'Email already in use' });
+        }
+      }
+
+      updates.email = normalizedEmail;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.json({
+        msg: 'Profile already up to date',
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          isApproved: user.isApproved,
+        }
+      });
+    }
+
+    Object.assign(user, updates);
+    await user.save();
+
+    if (io) {
+      io.emit('user-updated', {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      });
+    }
+
+    res.json({
+      msg: 'Profile updated successfully',
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        isApproved: user.isApproved,
+      }
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
 // GET CURRENT LOGGED-IN USER
 router.get('/me', auth, async (req, res) => {
   try {

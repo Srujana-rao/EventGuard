@@ -98,17 +98,19 @@ function ProfileSection({ onProfileUpdate }) {
 
         const serverRole = res.data.role || storedUser.role || 'ground';
         const status = res.data.roleChangeStatus || 'none';
+        const serverEmail = res.data.email || storedUser.email || '';
 
         // Always keep the actual role from the server — never treat pendingRole as active.
         setCurrentRole(serverRole);
         setSelectedRole(serverRole);
         setPendingRole(status === 'pending' ? res.data.pendingRole || null : null);
         setRoleChangeStatus(status === 'pending' ? 'pending' : status === 'rejected' ? 'none' : status);
+        setEmail(serverEmail);
 
         const syncedUser = {
           ...storedUser,
           username: res.data.username || storedUser.username,
-          email: res.data.email || storedUser.email,
+          email: serverEmail,
           role: serverRole,
         };
         localStorage.setItem('user', JSON.stringify(syncedUser));
@@ -171,45 +173,57 @@ function ProfileSection({ onProfileUpdate }) {
     setSaving(true);
     setMessage('');
 
-    // Never write a requested/pending role into localStorage — only the approved role.
-    const updatedUser = {
-      ...storedUser,
-      username: name,
-      email,
-      role: currentRole,
-    };
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    if (avatarPreview) {
-      localStorage.setItem('profileAvatar', avatarPreview);
-    } else {
-      localStorage.removeItem('profileAvatar');
-    }
-    if (onProfileUpdate) {
-      onProfileUpdate(updatedUser);
-    }
+    try {
+      const token = localStorage.getItem('token');
+      const payload = {
+        username: name.trim(),
+        email: email.trim().toLowerCase(),
+      };
 
-    if (!isHead && selectedRole !== currentRole) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.post(
-          'http://localhost:5000/api/auth/request-role-change',
-          { role: selectedRole },
-          { headers: { 'x-auth-token': token } }
-        );
-        setPendingRole(selectedRole);
-        setRoleChangeStatus('pending');
-        // Keep the active role unchanged until Head approves.
-        setSelectedRole(currentRole);
-        setMessage('Role change requested. Waiting for Head approval — your current role is unchanged.');
-      } catch (err) {
-        setSelectedRole(currentRole);
-        setMessage(err.response?.data?.msg || 'Failed to request role change.');
+      const res = await axios.put('http://localhost:5000/api/auth/profile', payload, {
+        headers: { 'x-auth-token': token },
+      });
+
+      const serverUser = res.data?.user || {};
+      const updatedUser = {
+        ...storedUser,
+        username: serverUser.username || name.trim(),
+        email: serverUser.email || email.trim().toLowerCase(),
+        role: currentRole,
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      if (avatarPreview) {
+        localStorage.setItem('profileAvatar', avatarPreview);
+      } else {
+        localStorage.removeItem('profileAvatar');
       }
-    } else {
-      setMessage('Profile saved.');
-    }
+      if (onProfileUpdate) {
+        onProfileUpdate(updatedUser);
+      }
 
-    setTimeout(() => setSaving(false), 300);
+      if (!isHead && selectedRole !== currentRole) {
+        try {
+          await axios.post(
+            'http://localhost:5000/api/auth/request-role-change',
+            { role: selectedRole },
+            { headers: { 'x-auth-token': token } }
+          );
+          setPendingRole(selectedRole);
+          setRoleChangeStatus('pending');
+          setSelectedRole(currentRole);
+          setMessage('Profile saved and role change requested. Waiting for Head approval — your current role is unchanged.');
+        } catch (err) {
+          setSelectedRole(currentRole);
+          setMessage(err.response?.data?.msg || 'Profile saved, but role change failed.');
+        }
+      } else {
+        setMessage('Profile saved.');
+      }
+    } catch (err) {
+      setMessage(err.response?.data?.msg || 'Failed to save profile.');
+    } finally {
+      setTimeout(() => setSaving(false), 300);
+    }
   };
 
   return (
@@ -522,13 +536,13 @@ function AccountSection() {
   );
 }
 
-export default function Settings() {
+export default function Settings({ onProfileUpdate }) {
   const [activeSection, setActiveSection] = useState('Profile');
 
   const renderSection = () => {
     switch (activeSection) {
       case 'Profile':
-        return <ProfileSection />;
+        return <ProfileSection onProfileUpdate={onProfileUpdate} />;
       case 'Notifications':
         return <NotificationsSection />;
       case 'Account':

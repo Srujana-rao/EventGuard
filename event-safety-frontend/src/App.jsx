@@ -70,6 +70,10 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
       });
     };
 
+    const handleAlertDeleted = (alertId) => {
+      setRealtimeAlerts((prev) => prev.filter((alert) => String(alert._id) !== String(alertId)));
+    };
+
     const handleNewMeeting = (meeting) => {
       // Only notify if the meeting wasn't created by the current user
       if (meeting?.createdBy && meeting.createdBy === username) {
@@ -98,6 +102,7 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
 
     socket.on('authenticated', handleAuthenticated);
     socket.on('receive-alert', handleReceiveAlert);
+    socket.on('alert-deleted', handleAlertDeleted);
     socket.on('new-meeting', handleNewMeeting);
     socket.on('pending-summary-update', handleApprovalUpdate);
     socket.on('meeting-deleted', handleMeetingDeleted);
@@ -111,6 +116,7 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
     return () => {
       socket.off('authenticated', handleAuthenticated);
       socket.off('receive-alert', handleReceiveAlert);
+      socket.off('alert-deleted', handleAlertDeleted);
       socket.off('new-meeting', handleNewMeeting);
       socket.off('pending-summary-update', handleApprovalUpdate);
       socket.off('meeting-deleted', handleMeetingDeleted);
@@ -269,6 +275,20 @@ function App() {
   const [userRole, setUserRole] = useState(initialAuth.userRole);
   const [username, setUsername] = useState(initialAuth.username);
 
+  const handleProfileUpdate = (updatedUser) => {
+    if (!updatedUser) return;
+    const nextUser = {
+      ...JSON.parse(localStorage.getItem('user') || '{}'),
+      ...updatedUser,
+    };
+    localStorage.setItem('user', JSON.stringify(nextUser));
+    setUsername(nextUser.username || null);
+    setUserRole(nextUser.role || userRole);
+    if (nextUser.role) {
+      setUserRole(nextUser.role);
+    }
+  };
+
   const handleSetAuth = (status) => {
     setIsAuthenticated(status);
     if (status) {
@@ -404,7 +424,7 @@ function App() {
           element={
             isAuthenticated ? (
               <DashboardShell title="Settings">
-                <Settings />
+                <Settings onProfileUpdate={handleProfileUpdate} />
               </DashboardShell>
             ) : (
               <Navigate to="/login" replace />

@@ -90,6 +90,7 @@ const alertSchema = new mongoose.Schema({
     mediaUrl: { type: String, default: null },
     mediaType: { type: String, enum: ['image', 'video', 'audio', null], default: null },
     sender: { type: String, required: true },
+    senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     senderRole: { type: String, required: true },
     targetRole: { type: String, enum: ['all', 'head', 'room', 'ground', null], default: null }, // Null means 'all'
     priority: { type: String, enum: ['urgent', 'important', 'info'], default: 'info' }, // NEW: Priority field
@@ -167,8 +168,9 @@ io.on('connection', (socket) => {
 
         const fullAlert = {
             message,
-            sender: socket.user.username,
-            senderRole: socket.user.role,
+            sender: alertData.sender || socket.user.username,
+            senderId: alertData.senderId || socket.user.id,
+            senderRole: alertData.senderRole || socket.user.role,
             timestamp: new Date().toISOString(), // Use ISO string for consistency
             mediaUrl,
             mediaType,
@@ -320,6 +322,32 @@ app.get('/api/alerts', async (req, res) => {
 });
 // -------------------------------------------------
 
+app.delete('/api/alerts/:id', auth, async (req, res) => {
+    try {
+        const alert = await Alert.findById(req.params.id);
+        if (!alert) {
+            return res.status(404).json({ msg: 'Alert not found.' });
+        }
+
+        const currentUser = await User.findById(req.user.id).select('username');
+        const isOwner = String(alert.senderId || '') === String(req.user.id)
+            || (currentUser && alert.sender === currentUser.username);
+
+        if (!isOwner) {
+            return res.status(403).json({ msg: 'Only the alert owner can delete this alert.' });
+        }
+
+        await Alert.deleteOne({ _id: req.params.id });
+        io.emit('alert-deleted', req.params.id);
+        res.status(200).json({ msg: 'Alert deleted.' });
+    } catch (error) {
+        console.error('Error deleting alert:', error.message);
+        if (error.kind === 'ObjectId') {
+            return res.status(404).json({ msg: 'Alert not found.' });
+        }
+        res.status(500).json({ message: 'Failed to delete alert.' });
+    }
+});
 
 // --- API Route to fetch all users (username + role + status) ---
 app.get('/api/users', async (_req, res) => {

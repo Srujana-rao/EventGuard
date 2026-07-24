@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Box,
@@ -25,6 +26,7 @@ import {
 } from '@mui/material';
 
 import SendIcon from '@mui/icons-material/Send';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import GroupsIcon from '@mui/icons-material/Groups';
 import EventNoteIcon from '@mui/icons-material/EventNote';
@@ -314,6 +316,8 @@ const AlertsTab = ({
   alertSendError,
   alertSendSuccess,
   alertMediaInputRef,
+  currentUserId,
+  currentUsername,
 }) => {
   const isSendAlertDisabled =
     !alertMessage.trim() ||
@@ -330,6 +334,20 @@ const AlertsTab = ({
         return 'warning';
       default:
         return 'default';
+    }
+  };
+
+  const handleDeleteAlert = async (alertId) => {
+    const confirmed = window.confirm('Are you sure you want to delete this alert?');
+    if (!confirmed) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:5000/api/alerts/${alertId}`, {
+        headers: { 'x-auth-token': token },
+      });
+    } catch (err) {
+      window.alert(err.response?.data?.msg || 'Failed to delete alert.');
     }
   };
 
@@ -579,10 +597,12 @@ const AlertsTab = ({
           <Typography>No real-time alerts yet.</Typography>
         ) : (
           <Box component="ul" sx={{ padding: 0, listStyle: 'none' }}>
-            {realtimeAlerts.map((alert, index) => (
+            {realtimeAlerts.map((alert, index) => {
+              const isOwner = String(alert.senderId || '') === String(currentUserId) || alert.sender === currentUsername;
+              return (
               <Box
                 component="li"
-                key={index}
+                key={alert._id || index}
                 sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}
               >
                 <Typography flexGrow={1}>
@@ -627,8 +647,23 @@ const AlertsTab = ({
                     </Typography>
                   </Box>
                 )}
+                {isOwner && (
+                  <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
+                    <IconButton
+                      aria-label="Delete alert"
+                      onClick={() => handleDeleteAlert(alert._id)}
+                      sx={{
+                        color: '#2563eb',
+                        '&:hover': { bgcolor: 'rgba(37, 99, 235, 0.08)' },
+                      }}
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                )}
               </Box>
-            ))}
+              );
+            })}
           </Box>
         )}
       </Paper>
@@ -659,6 +694,7 @@ export default function Dashboard({
   meetingNotificationCount = 0,
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const currentUserData = JSON.parse(localStorage.getItem('user') || '{}');
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -829,6 +865,8 @@ export default function Dashboard({
             alertSendError={alertSendError}
             alertSendSuccess={alertSendSuccess}
             alertMediaInputRef={alertMediaInputRef}
+            currentUserId={currentUserData.id || currentUserData._id || ''}
+            currentUsername={currentUserData.username || username}
           />
         </Box>
       </Box>
