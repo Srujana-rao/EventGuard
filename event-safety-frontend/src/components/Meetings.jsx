@@ -182,16 +182,23 @@ export default function Meetings({ userRole }) {
 
           <Box component="form" onSubmit={handleCreateMeeting} noValidate>
             <TextField
-              label="Title"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
+  placeholder="Title*"
+  variant="outlined"
+  fullWidth
+  margin="normal"
+  value={title}
+  onChange={(e) => setTitle(e.target.value)}
+  required
+  sx={{
+    '& .MuiOutlinedInput-input': {
+      pl: 2,
+      pr: 8.8,
+      py: 1.25,
+    },
+  }}
+/>
             <TextField
-              label="Description"
+              placeholder="Description"
               variant="outlined"
               fullWidth
               margin="normal"
@@ -226,14 +233,20 @@ export default function Meetings({ userRole }) {
               required
             />
             <TextField
-              label="Meeting Link"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={meetingLink}
-              onChange={(e) => setMeetingLink(e.target.value)}
-              placeholder="https://meet.google.com/..."
-            />
+  placeholder="Meeting Link"
+  variant="outlined"
+  fullWidth
+  margin="normal"
+  value={meetingLink}
+  onChange={(e) => setMeetingLink(e.target.value)}
+  sx={{
+    '& .MuiOutlinedInput-input': {
+      pl: 2,
+      pr: 8.8,
+      py: 1.25,
+    },
+  }}
+/>
             <Button
               type="submit"
               variant="contained"

@@ -341,25 +341,27 @@ const AlertsTab = ({
         </Typography>
         <Box component="form" onSubmit={handleSendAlert} noValidate>
           <TextField
-            variant="outlined"
-            fullWidth
-            placeholder="Enter alert message"
-            value={alertMessage}
-            onChange={(e) => setAlertMessage(e.target.value)}
-            sx={{
-              mb: 3,
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: 'white',
-                borderRadius: 2,
-              },
-              '& .MuiOutlinedInput-input': {
-                px: 1.5,
-                py: 1.25,
-              },
-            }}
-            required
-            inputProps={{ 'aria-label': 'Alert message' }}
-          />
+  variant="outlined"
+  fullWidth
+  placeholder="Enter alert message"
+  value={alertMessage}
+  onChange={(e) => setAlertMessage(e.target.value)}
+  name="alert-message-field"
+  autoComplete="off"
+  sx={{
+    mb: 3,
+    '& .MuiOutlinedInput-root': {
+      backgroundColor: 'white',
+    },
+    '& .MuiOutlinedInput-input': {
+      pl: 2,
+      pr: 8.8,
+      py: 1.25,
+    },
+  }}
+  required
+  inputProps={{ 'aria-label': 'Alert message' }}
+/>
           <Box sx={{ mb: 3 }}>
             <Typography fontWeight={600} sx={{ mb: 1 }}>
               Quick Emergency
@@ -525,15 +527,24 @@ const AlertsTab = ({
             </Box>
           </Box>
           <TextField
-            variant="outlined"
-            required
-            fullWidth
-            placeholder="Enter location (optional)"
-            value={alertLocationTag}
-            onChange={(e) => setAlertLocationTag(e.target.value)}
-            sx={{ mb: 3 }}
-            aria-label="Location tag"
-          />
+  variant="outlined"
+  required
+  fullWidth
+  placeholder="Enter location"
+  value={alertLocationTag}
+  onChange={(e) => setAlertLocationTag(e.target.value)}
+  name="alert-location-field"
+  autoComplete="off"
+  sx={{
+    mb: 3,
+    '& .MuiOutlinedInput-input': {
+      pl: 2,
+      pr: 8.8,
+      py: 1.25,
+    },
+  }}
+  aria-label="Location tag"
+/>
           <Button
             type="submit"
             variant="contained"
@@ -575,13 +586,21 @@ const AlertsTab = ({
                 sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}
               >
                 <Typography flexGrow={1}>
-                  <strong>ALERT:</strong> {alert.message}
-                  <br />
-                  From: {alert.sender} ({alert.senderRole})
-                  {alert.locationTag && <span> at {alert.locationTag}</span>}
-                  <br />
-                  Time: {new Date(alert.timestamp).toLocaleTimeString()}
-                </Typography>
+  <strong>ALERT:</strong> {alert.message}
+  <br />
+
+  {alert.locationTag && (
+    <>
+      <strong>LOCATION:</strong> {alert.locationTag}
+      <br />
+    </>
+  )}
+
+  <strong>FROM:</strong> {alert.sender} ({alert.senderRole})
+  <br />
+
+  <strong>TIME:</strong> {new Date(alert.timestamp).toLocaleTimeString()}
+</Typography>
                 <Chip
                   label={alert.priority?.toUpperCase()}
                   color={getPriorityColor(alert.priority)}
@@ -765,12 +784,12 @@ export default function Dashboard({
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
             <Typography
-              variant="h6"
-              sx={{ fontWeight: 600, color: '#667eea' }}
-              aria-live="polite"
-            >
-              Welcome, {username} ({userRole})
-            </Typography>
+  variant="h6"
+  sx={{ fontWeight: 600, color: '#667eea' }}
+  aria-live="polite"
+>
+  Welcome, {username} ({userRole.charAt(0).toUpperCase() + userRole.slice(1)})
+</Typography>
             <Avatar
               src={localStorage.getItem('profileAvatar') || undefined}
               sx={{ width: 36, height: 36, bgcolor: '#667eea' }}

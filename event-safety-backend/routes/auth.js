@@ -112,6 +112,10 @@ router.get('/google',
 router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/login', session: false }),
   (req, res) => {
+    if (!req.user.isApproved) {
+      return res.redirect(`http://localhost:5173/pending-approval`);
+    }
+
     const payload = {
       user: {
         id: req.user.id,

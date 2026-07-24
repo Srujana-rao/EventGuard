@@ -496,12 +496,12 @@ export default function DashboardShell({ children, title }) {
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
             <Typography
-              variant="h6"
-              sx={{ fontWeight: 600, color: '#667eea' }}
-              aria-live="polite"
-            >
-              Welcome, {username} ({userRole})
-            </Typography>
+  variant="h6"
+  sx={{ fontWeight: 600, color: '#667eea' }}
+  aria-live="polite"
+>
+  Welcome, {username} ({userRole.charAt(0).toUpperCase() + userRole.slice(1)})
+</Typography>
             <Avatar
               src={localStorage.getItem('profileAvatar') || undefined}
               sx={{ width: 36, height: 36, bgcolor: '#667eea' }}
