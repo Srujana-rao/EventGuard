@@ -8,6 +8,7 @@ const path = require('path'); // Node.js path module, needed for file paths
 const authRoutes = require('./routes/auth'); // Import authentication routes
 const User = require('./models/User'); // Import User model
 const Meeting = require('./models/Meeting'); // Import Meeting model
+const Team = require('./models/Team'); // Import Team model
 const jwt = require('jsonwebtoken'); // NEW: Import JWT for Socket.IO auth
 const auth = require('./routes/auth').auth; // FIX: Import auth middleware directly for protected routes (like delete)
 // const authorizeRole = require('./routes/auth').authorizeRole; // Optional: import if needed directly in server.js routes
@@ -349,17 +350,126 @@ app.delete('/api/alerts/:id', auth, async (req, res) => {
     }
 });
 
-// --- API Route to fetch all users (username + role + status) ---
+// --- Teams CRUD ---
+app.get('/api/teams', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'head') {
+            return res.status(403).json({ message: 'Only head users can manage teams.' });
+        }
+
+        const teams = await Team.find().sort({ createdAt: -1 }).populate('members', 'username role email').populate('createdBy', 'username');
+        res.status(200).json(teams);
+    } catch (error) {
+        console.error('Error fetching teams:', error.message);
+        res.status(500).json({ message: 'Failed to fetch teams.' });
+    }
+});
+
+app.post('/api/teams', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'head') {
+            return res.status(403).json({ message: 'Only head users can create teams.' });
+        }
+
+        const { name, members = [] } = req.body;
+        const trimmedName = (name || '').trim();
+        if (!trimmedName) {
+            return res.status(400).json({ message: 'Team name is required.' });
+        }
+
+        const existingTeam = await Team.findOne({ name: { $regex: `^${trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } });
+        if (existingTeam) {
+            return res.status(400).json({ message: 'A team with this name already exists.' });
+        }
+
+        const validMemberIds = await User.find({ _id: { $in: members }, isApproved: true, role: { $in: ['ground', 'room'] } }).distinct('_id');
+        const team = new Team({
+            name: trimmedName,
+            members: validMemberIds,
+            createdBy: req.user.id,
+        });
+
+        await team.save();
+        const populatedTeam = await team.populate('members', 'username role email').populate('createdBy', 'username');
+        res.status(201).json(populatedTeam);
+    } catch (error) {
+        console.error('Error creating team:', error.message);
+        res.status(500).json({ message: 'Failed to create team.' });
+    }
+});
+
+app.put('/api/teams/:id', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'head') {
+            return res.status(403).json({ message: 'Only head users can update teams.' });
+        }
+
+        const team = await Team.findById(req.params.id);
+        if (!team) {
+            return res.status(404).json({ message: 'Team not found.' });
+        }
+
+        const { name, members = [] } = req.body;
+        const trimmedName = (name || '').trim();
+        if (!trimmedName) {
+            return res.status(400).json({ message: 'Team name is required.' });
+        }
+
+        const duplicateTeam = await Team.findOne({ _id: { $ne: team._id }, name: { $regex: `^${trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } });
+        if (duplicateTeam) {
+            return res.status(400).json({ message: 'A team with this name already exists.' });
+        }
+
+        const validMemberIds = await User.find({ _id: { $in: members }, isApproved: true, role: { $in: ['ground', 'room'] } }).distinct('_id');
+        team.name = trimmedName;
+        team.members = validMemberIds;
+        await team.save();
+        const populatedTeam = await team.populate('members', 'username role email').populate('createdBy', 'username');
+        res.status(200).json(populatedTeam);
+    } catch (error) {
+        console.error('Error updating team:', error.message);
+        if (error.kind === 'ObjectId') {
+            return res.status(404).json({ message: 'Team not found.' });
+        }
+        res.status(500).json({ message: 'Failed to update team.' });
+    }
+});
+
+app.delete('/api/teams/:id', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'head') {
+            return res.status(403).json({ message: 'Only head users can delete teams.' });
+        }
+
+        const team = await Team.findById(req.params.id);
+        if (!team) {
+            return res.status(404).json({ message: 'Team not found.' });
+        }
+
+        await Team.deleteOne({ _id: req.params.id });
+        res.status(200).json({ message: 'Team deleted.' });
+    } catch (error) {
+        console.error('Error deleting team:', error.message);
+        if (error.kind === 'ObjectId') {
+            return res.status(404).json({ message: 'Team not found.' });
+        }
+        res.status(500).json({ message: 'Failed to delete team.' });
+    }
+});
+// --- End Teams CRUD ---
+
 app.get('/api/users', async (_req, res) => {
     try {
-        const users = await User.find({ isApproved: true }).select('username role');
+        const users = await User.find({ isApproved: true }).select('username role email');
         const onlineUserIds = new Set(
             Array.from(socketToUserId.values()).map((id) => String(id))
         );
         const result = users.map((user) => {
             const isOnline = onlineUserIds.has(String(user._id));
             return {
+                _id: user._id,
                 username: user.username,
+                email: user.email,
                 role: user.role,
                 status: isOnline ? 'online' : 'offline',
             };

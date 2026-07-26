@@ -1,303 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Link, useLocation } from 'react-router-dom';
 import {
   Box,
   Paper,
   TextField,
   Button,
   Typography,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Chip,
-  Snackbar,
   Alert as MuiAlert,
-  Badge,
   IconButton,
   Avatar,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
 } from '@mui/material';
 
 import SendIcon from '@mui/icons-material/Send';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
-import GroupsIcon from '@mui/icons-material/Groups';
-import EventNoteIcon from '@mui/icons-material/EventNote';
-import SettingsIcon from '@mui/icons-material/Settings';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import SecurityIcon from '@mui/icons-material/Security';
+import SidebarMenu from './SidebarMenu';
 
-const sidebarGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)';
 const topBarBg = '#ffffff';
 const topBarTextColor = '#333';
-
 const sidebarWidth = 220;
 
 function Alert(props) {
   return <MuiAlert elevation={6} variant="filled" {...props} />;
-}
-
-function SidebarMenu({
-  userRole,
-  approvalsPending,
-  mobileOpen,
-  onDrawerToggle,
-  onLogout,
-  meetingNotificationCount = 0,
-}) {
-  const location = useLocation();
-  const matchDashboard = location.pathname === '/dashboard';
-  const matchHeadDashboard = location.pathname === '/head-dashboard';
-  const matchStaffInfo = location.pathname === '/staff-info';
-  const matchMeetings = location.pathname === '/meetings';
-  const matchSettings = location.pathname === '/settings';
-
-  const buttons = [
-    {
-      label: 'Main Dashboard',
-      to: '/dashboard',
-      icon: <NotificationsActiveIcon />,
-      showBadge: false,
-      badgeContent: null,
-      active: matchDashboard,
-    },
-    {
-      label: 'Staff Info',
-      to: '/staff-info',
-      icon: <GroupsIcon />,
-      showBadge: false,
-      badgeContent: null,
-      active: matchStaffInfo,
-    },
-    {
-      label: 'Meetings',
-      to: '/meetings',
-      icon: <EventNoteIcon />,
-      showBadge: meetingNotificationCount > 0,
-      badgeContent: meetingNotificationCount,
-      active: matchMeetings,
-    },
-  ];
-
-  if (userRole === 'head') {
-    buttons.unshift({
-      label: 'User Approvals',
-      to: '/head-dashboard',
-      icon: <AdminPanelSettingsIcon />,
-      showBadge: approvalsPending > 0,
-      badgeContent: approvalsPending,
-      active: matchHeadDashboard,
-    });
-    buttons.push({
-      label: 'Settings',
-      to: '/settings',
-      icon: <SettingsIcon />,
-      showBadge: false,
-      badgeContent: null,
-      active: matchSettings,
-    });
-  } else {
-    buttons.push({
-      label: 'Settings',
-      to: '/settings',
-      icon: <SettingsIcon />,
-      showBadge: false,
-      badgeContent: null,
-      active: matchSettings,
-    });
-  }
-
-  return (
-    <>
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={onDrawerToggle}
-        ModalProps={{
-          keepMounted: true,
-        }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: sidebarWidth,
-            background: sidebarGradient,
-            color: 'white',
-          },
-        }}
-      >
-        <List sx={{ mt: 6 }}>
-          {buttons.map(({ label, to, icon, showBadge, badgeContent, active }) => (
-            <ListItem key={label} disablePadding>
-              <ListItemButton
-                component={Link}
-                to={to}
-                selected={active}
-                sx={{
-                  color: 'white',
-                  '&.Mui-selected': {
-                    bgcolor: 'rgba(255,255,255,0.18)',
-                  },
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
-                }}
-                onClick={onDrawerToggle}
-                aria-label={`Go to ${label}`}
-              >
-                <ListItemIcon sx={{ color: 'white' }}>{icon}</ListItemIcon>
-                <ListItemText primary={label} />
-                {showBadge && badgeContent > 0 && (
-                  <Badge
-                    badgeContent={badgeContent}
-                    max={99}
-                    sx={{
-                      mr: 2,
-                      '& .MuiBadge-badge': {
-                        bgcolor: '#ffffff',
-                        color: '#667eea',
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        minWidth: 18,
-                        height: 18,
-                        px: 0.5,
-                      },
-                    }}
-                  />
-                )}
-              </ListItemButton>
-            </ListItem>
-          ))}
-          <Box sx={{ flexGrow: 1 }} />
-          <Box sx={{ px: 2, pb: 2, mt: 1 }}>
-            <Button
-              variant="contained"
-              onClick={onLogout}
-              fullWidth
-              sx={{
-                fontWeight: 700,
-                bgcolor: 'rgba(255,255,255,0.15)',
-                color: 'white',
-                ':hover': { bgcolor: 'rgba(255,255,255,0.25)' },
-              }}
-              aria-label="Logout"
-            >
-              Logout
-            </Button>
-          </Box>
-        </List>
-      </Drawer>
-
-      <Box
-        sx={{
-          display: { xs: 'none', md: 'flex' },
-          width: sidebarWidth,
-          background: sidebarGradient,
-          color: 'white',
-          flexDirection: 'column',
-          alignItems: 'start',
-          px: 3,
-          py: 5,
-          boxShadow: 3,
-          height: '100vh',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: 1300,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 5 }}>
-          <SecurityIcon sx={{ fontSize: 28, color: '#ffd700' }} />
-          <Typography
-            sx={{
-              fontWeight: 700,
-              fontSize: 22,
-              letterSpacing: 0.5,
-              userSelect: 'none',
-              color: '#ffd700',
-            }}
-          >
-            EventGuard
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
-          {buttons.map(({ label, to, icon, showBadge, badgeContent, active }) => (
-            <Button
-              key={label}
-              component={Link}
-              to={to}
-              variant="text"
-              color="inherit"
-              sx={{
-                justifyContent: 'flex-start',
-                fontWeight: 600,
-                fontSize: 15,
-                textTransform: 'none',
-                width: '100%',
-                backgroundColor: active ? 'rgba(255,255,255,0.18)' : 'inherit',
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.12)',
-                },
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                whiteSpace: 'nowrap',
-                minHeight: 40,
-                px: 1,
-              }}
-              aria-current={active ? 'page' : undefined}
-              aria-label={`Go to ${label}`}
-            >
-              {icon}
-              <span style={{ flexGrow: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
-              {showBadge && badgeContent > 0 && (
-                <Chip
-                  label={badgeContent > 99 ? '99+' : badgeContent}
-                  size="small"
-                  sx={{
-                    ml: 'auto',
-                    height: 18,
-                    minWidth: 18,
-                    fontSize: '0.65rem',
-                    fontWeight: 700,
-                    bgcolor: '#ffffff',
-                    color: '#667eea',
-                    flexShrink: 0,
-                    '& .MuiChip-label': { px: 0.75 },
-                  }}
-                  aria-label={`${badgeContent} pending approvals`}
-                />
-              )}
-            </Button>
-          ))}
-        </Box>
-        <Box sx={{ flexGrow: 1 }} />
-        <Button
-          variant="contained"
-          onClick={onLogout}
-          sx={{
-            mt: 4,
-            width: '100%',
-            fontWeight: 700,
-            bgcolor: 'rgba(255,255,255,0.15)',
-            color: 'white',
-            ':hover': { bgcolor: 'rgba(255,255,255,0.25)' },
-          }}
-          aria-label="Logout"
-        >
-          Logout
-        </Button>
-      </Box>
-    </>
-  );
 }
 
 const AlertsTab = ({
@@ -316,8 +41,6 @@ const AlertsTab = ({
   alertSendError,
   alertSendSuccess,
   alertMediaInputRef,
-  currentUserId,
-  currentUsername,
 }) => {
   const isSendAlertDisabled =
     !alertMessage.trim() ||
@@ -337,20 +60,6 @@ const AlertsTab = ({
     }
   };
 
-  const handleDeleteAlert = async (alertId) => {
-    const confirmed = window.confirm('Are you sure you want to delete this alert?');
-    if (!confirmed) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/alerts/${alertId}`, {
-        headers: { 'x-auth-token': token },
-      });
-    } catch (err) {
-      window.alert(err.response?.data?.msg || 'Failed to delete alert.');
-    }
-  };
-
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 4, alignItems: 'stretch' }}>
       <Paper elevation={4} sx={{ p: 4, borderRadius: 3, overflow: 'hidden' }}> 
@@ -359,27 +68,27 @@ const AlertsTab = ({
         </Typography>
         <Box component="form" onSubmit={handleSendAlert} noValidate>
           <TextField
-  variant="outlined"
-  fullWidth
-  placeholder="Enter alert message"
-  value={alertMessage}
-  onChange={(e) => setAlertMessage(e.target.value)}
-  name="alert-message-field"
-  autoComplete="off"
-  sx={{
-    mb: 3,
-    '& .MuiOutlinedInput-root': {
-      backgroundColor: 'white',
-    },
-    '& .MuiOutlinedInput-input': {
-      pl: 2,
-      pr: 8.8,
-      py: 1.25,
-    },
-  }}
-  required
-  inputProps={{ 'aria-label': 'Alert message' }}
-/>
+            variant="outlined"
+            fullWidth
+            placeholder="Enter alert message"
+            value={alertMessage}
+            onChange={(e) => setAlertMessage(e.target.value)}
+            name="alert-message-field"
+            autoComplete="off"
+            sx={{
+              mb: 3,
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'white',
+              },
+              '& .MuiOutlinedInput-input': {
+                pl: 2,
+                pr: 8.8,
+                py: 1.25,
+              },
+            }}
+            required
+            inputProps={{ 'aria-label': 'Alert message' }}
+          />
           <Box sx={{ mb: 3 }}>
             <Typography fontWeight={600} sx={{ mb: 1 }}>
               Quick Emergency
@@ -545,24 +254,24 @@ const AlertsTab = ({
             </Box>
           </Box>
           <TextField
-  variant="outlined"
-  required
-  fullWidth
-  placeholder="Enter location"
-  value={alertLocationTag}
-  onChange={(e) => setAlertLocationTag(e.target.value)}
-  name="alert-location-field"
-  autoComplete="off"
-  sx={{
-    mb: 3,
-    '& .MuiOutlinedInput-input': {
-      pl: 2,
-      pr: 8.8,
-      py: 1.25,
-    },
-  }}
-  aria-label="Location tag"
-/>
+            variant="outlined"
+            required
+            fullWidth
+            placeholder="Enter location"
+            value={alertLocationTag}
+            onChange={(e) => setAlertLocationTag(e.target.value)}
+            name="alert-location-field"
+            autoComplete="off"
+            sx={{
+              mb: 3,
+              '& .MuiOutlinedInput-input': {
+                pl: 2,
+                pr: 8.8,
+                py: 1.25,
+              },
+            }}
+            aria-label="Location tag"
+          />
           <Button
             type="submit"
             variant="contained"
@@ -597,30 +306,28 @@ const AlertsTab = ({
           <Typography>No real-time alerts yet.</Typography>
         ) : (
           <Box component="ul" sx={{ padding: 0, listStyle: 'none' }}>
-            {realtimeAlerts.map((alert, index) => {
-              const isOwner = String(alert.senderId || '') === String(currentUserId) || alert.sender === currentUsername;
-              return (
+            {realtimeAlerts.map((alert, index) => (
               <Box
                 component="li"
-                key={alert._id || index}
+                key={index}
                 sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}
               >
                 <Typography flexGrow={1}>
-  <strong>ALERT:</strong> {alert.message}
-  <br />
+                  <strong>ALERT:</strong> {alert.message}
+                  <br />
 
-  {alert.locationTag && (
-    <>
-      <strong>LOCATION:</strong> {alert.locationTag}
-      <br />
-    </>
-  )}
+                  {alert.locationTag && (
+                    <>
+                      <strong>LOCATION:</strong> {alert.locationTag}
+                      <br />
+                    </>
+                  )}
 
-  <strong>FROM:</strong> {alert.sender} ({alert.senderRole})
-  <br />
+                  <strong>FROM:</strong> {alert.sender} ({alert.senderRole})
+                  <br />
 
-  <strong>TIME:</strong> {new Date(alert.timestamp).toLocaleTimeString()}
-</Typography>
+                  <strong>TIME:</strong> {new Date(alert.timestamp).toLocaleTimeString()}
+                </Typography>
                 <Chip
                   label={alert.priority?.toUpperCase()}
                   color={getPriorityColor(alert.priority)}
@@ -647,23 +354,8 @@ const AlertsTab = ({
                     </Typography>
                   </Box>
                 )}
-                {isOwner && (
-                  <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-                    <IconButton
-                      aria-label="Delete alert"
-                      onClick={() => handleDeleteAlert(alert._id)}
-                      sx={{
-                        color: '#2563eb',
-                        '&:hover': { bgcolor: 'rgba(37, 99, 235, 0.08)' },
-                      }}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                )}
               </Box>
-              );
-            })}
+            ))}
           </Box>
         )}
       </Paper>
@@ -694,7 +386,6 @@ export default function Dashboard({
   meetingNotificationCount = 0,
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const currentUserData = JSON.parse(localStorage.getItem('user') || '{}');
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -723,10 +414,10 @@ export default function Dashboard({
       <SidebarMenu
         userRole={userRole}
         approvalsPending={approvalsPending}
+        meetingsPending={meetingNotificationCount}
         mobileOpen={mobileOpen}
         onDrawerToggle={handleDrawerToggle}
         onLogout={handleLogout}
-        meetingNotificationCount={meetingNotificationCount}
       />
 
       <Box
@@ -820,12 +511,12 @@ export default function Dashboard({
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
             <Typography
-  variant="h6"
-  sx={{ fontWeight: 600, color: '#667eea' }}
-  aria-live="polite"
->
-  Welcome, {username} ({userRole.charAt(0).toUpperCase() + userRole.slice(1)})
-</Typography>
+              variant="h6"
+              sx={{ fontWeight: 600, color: '#667eea' }}
+              aria-live="polite"
+            >
+              Welcome, {username} ({userRole.charAt(0).toUpperCase() + userRole.slice(1)})
+            </Typography>
             <Avatar
               src={localStorage.getItem('profileAvatar') || undefined}
               sx={{ width: 36, height: 36, bgcolor: '#667eea' }}
@@ -865,8 +556,6 @@ export default function Dashboard({
             alertSendError={alertSendError}
             alertSendSuccess={alertSendSuccess}
             alertMediaInputRef={alertMediaInputRef}
-            currentUserId={currentUserData.id || currentUserData._id || ''}
-            currentUsername={currentUserData.username || username}
           />
         </Box>
       </Box>

@@ -14,6 +14,7 @@ import StaffInfo from './components/StaffInfo';
 import Meetings from './components/Meetings';
 import DashboardShell from './components/DashboardShell';
 import Settings from './components/Settings';
+import Teams from './components/Teams';
 import PendingApproval from './components/PendingApproval';
 import SocialSuccess from './components/SocialSuccess';
 
@@ -372,7 +373,7 @@ function App() {
             !isAuthenticated ? (
               <Navigate to="/login" replace />
             ) : userRole === 'head' ? (
-              <DashboardShell title="User Approvals">
+              <DashboardShell title="User Approvals" userRole={userRole} username={username}>
                 <HeadDashboard userRole={userRole} />
               </DashboardShell>
             ) : (
@@ -399,7 +400,7 @@ function App() {
           path="/staff-info"
           element={
             isAuthenticated ? (
-              <DashboardShell title="Staff Info">
+              <DashboardShell title="Staff Info" userRole={userRole} username={username}>
                 <StaffInfo />
               </DashboardShell>
             ) : (
@@ -411,7 +412,7 @@ function App() {
           path="/meetings"
           element={
             isAuthenticated ? (
-              <DashboardShell title="Meetings">
+              <DashboardShell title="Meetings" userRole={userRole} username={username}>
                 <Meetings userRole={userRole} />
               </DashboardShell>
             ) : (
@@ -423,9 +424,25 @@ function App() {
           path="/settings"
           element={
             isAuthenticated ? (
-              <DashboardShell title="Settings">
+              <DashboardShell title="Settings" userRole={userRole} username={username}>
                 <Settings onProfileUpdate={handleProfileUpdate} />
               </DashboardShell>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/teams"
+          element={
+            isAuthenticated ? (
+              userRole === 'head' ? (
+                <DashboardShell title="Teams" userRole={userRole} username={username}>
+                  <Teams />
+                </DashboardShell>
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
             ) : (
               <Navigate to="/login" replace />
             )
