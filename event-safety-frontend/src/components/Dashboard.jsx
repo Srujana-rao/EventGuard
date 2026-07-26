@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Box,
   Paper,
@@ -20,6 +21,7 @@ import SidebarMenu from './SidebarMenu';
 const topBarBg = '#ffffff';
 const topBarTextColor = '#333';
 const sidebarWidth = 220;
+const API_BASE_URL = 'http://localhost:5000/api';
 
 function Alert(props) {
   return <MuiAlert elevation={6} variant="filled" {...props} />;
@@ -386,6 +388,7 @@ export default function Dashboard({
   meetingNotificationCount = 0,
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [myTeam, setMyTeam] = useState(null);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -397,6 +400,25 @@ export default function Dashboard({
     }
     window.addEventListener('keyup', handleKeyUp);
     return () => window.removeEventListener('keyup', handleKeyUp);
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const token = localStorage.getItem('token');
+    if (!token) return undefined;
+
+    axios
+      .get(`${API_BASE_URL}/teams/my-team`, { headers: { 'x-auth-token': token } })
+      .then((res) => {
+        if (isMounted) setMyTeam(res.data);
+      })
+      .catch(() => {
+        // non-critical
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
@@ -510,13 +532,20 @@ export default function Dashboard({
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 600, color: '#667eea' }}
-              aria-live="polite"
-            >
-              Welcome, {username} ({userRole.charAt(0).toUpperCase() + userRole.slice(1)})
-            </Typography>
+            <Box sx={{ textAlign: 'right' }}>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 600, color: '#667eea', lineHeight: 1.2 }}
+                aria-live="polite"
+              >
+                Welcome, {username} ({userRole.charAt(0).toUpperCase() + userRole.slice(1)})
+              </Typography>
+              {myTeam && (
+                <Typography variant="body1" sx={{ color: '#667eea', display: 'block', fontWeight: 'bold' }}>
+                  Team: {myTeam.name}
+                </Typography>
+              )}
+            </Box>
             <Avatar
               src={localStorage.getItem('profileAvatar') || undefined}
               sx={{ width: 36, height: 36, bgcolor: '#667eea' }}

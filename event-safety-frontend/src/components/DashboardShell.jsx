@@ -21,6 +21,8 @@ export default function DashboardShell({ children, title, userRole: propUserRole
   const [mobileOpen, setMobileOpen] = useState(false);
   const [approvalsPending, setApprovalsPending] = useState(0);
   const [meetingsPending, setMeetingsPending] = useState(0);
+  const [myTeam, setMyTeam] = useState(null);
+  const [hideTopBar, setHideTopBar] = useState(false);
 
   const { username, userRole } = useMemo(() => {
     if (propUserRole && propUsername) {
@@ -34,6 +36,16 @@ export default function DashboardShell({ children, title, userRole: propUserRole
       return { username: '', userRole: '' };
     }
   }, [propUserRole, propUsername]);
+
+  // Listen for Teams.jsx signalling its create/edit dialog is open —
+  // hides this top bar so it doesn't render above the dialog (z-index clash)
+  useEffect(() => {
+    const handleDialogToggle = (e) => {
+      setHideTopBar(!!e.detail?.open);
+    };
+    window.addEventListener('teams-dialog-toggle', handleDialogToggle);
+    return () => window.removeEventListener('teams-dialog-toggle', handleDialogToggle);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -65,6 +77,15 @@ export default function DashboardShell({ children, title, userRole: propUserRole
         } catch {
           // non-critical
         }
+      }
+
+      try {
+        const myTeamRes = await axios.get(`${API_BASE_URL}/teams/my-team`, config);
+        if (isMounted) {
+          setMyTeam(myTeamRes.data);
+        }
+      } catch {
+        // non-critical
       }
     };
 
@@ -120,49 +141,51 @@ export default function DashboardShell({ children, title, userRole: propUserRole
         onLogout={handleLogout}
       />
 
-      <Box
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 64,
-          bgcolor: topBarBg,
-          color: topBarTextColor,
-          display: { md: 'none' },
-          alignItems: 'center',
-          px: 2,
-          zIndex: 1400,
-          boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
-          justifyContent: 'space-between',
-        }}
-      >
-        <IconButton
-          edge="start"
-          onClick={handleDrawerToggle}
-          aria-label="Open sidebar menu"
-          sx={{ color: '#667eea' }}
+      {!hideTopBar && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 64,
+            bgcolor: topBarBg,
+            color: topBarTextColor,
+            display: { md: 'none' },
+            alignItems: 'center',
+            px: 2,
+            zIndex: 1400,
+            boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
+            justifyContent: 'space-between',
+          }}
         >
-          {mobileOpen ? <CloseIcon /> : <MenuIcon />}
-        </IconButton>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <SecurityIcon sx={{ fontSize: 22, color: '#667eea' }} />
-          <Typography
-            variant="h6"
-            fontWeight={700}
-            noWrap
-            sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
+          <IconButton
+            edge="start"
+            onClick={handleDrawerToggle}
+            aria-label="Open sidebar menu"
+            sx={{ color: '#667eea' }}
           >
-            EventGuard
-          </Typography>
+            {mobileOpen ? <CloseIcon /> : <MenuIcon />}
+          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <SecurityIcon sx={{ fontSize: 22, color: '#667eea' }} />
+            <Typography
+              variant="h6"
+              fontWeight={700}
+              noWrap
+              sx={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              EventGuard
+            </Typography>
+          </Box>
+          <Box sx={{ width: 44 }} />
         </Box>
-        <Box sx={{ width: 44 }} />
-      </Box>
+      )}
 
       <Box
         sx={{
@@ -174,57 +197,66 @@ export default function DashboardShell({ children, title, userRole: propUserRole
           width: { xs: '100%', md: `calc(100% - ${sidebarWidth}px)` },
         }}
       >
-        <Box
-          sx={{
-            width: '100%',
-            height: 72,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            bgcolor: topBarBg,
-            color: topBarTextColor,
-            px: { xs: 2, md: 2.5 },
-            position: 'fixed',
-            top: { xs: 64, md: 0 },
-            left: 0,
-            right: 0,
-            zIndex: 1350,
-            boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-            <SecurityIcon sx={{ fontSize: 50, color: '#667eea' }} />
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 700,
-                letterSpacing: 0.4,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              EventGuard
-            </Typography>
-          </Box>
+        {!hideTopBar && (
+          <Box
+            sx={{
+              width: '100%',
+              height: 72,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              bgcolor: topBarBg,
+              color: topBarTextColor,
+              px: { xs: 2, md: 2.5 },
+              position: 'fixed',
+              top: { xs: 64, md: 0 },
+              left: 0,
+              right: 0,
+              zIndex: 1350,
+              boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+              <SecurityIcon sx={{ fontSize: 50, color: '#667eea' }} />
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  letterSpacing: 0.4,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                EventGuard
+              </Typography>
+            </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 600, color: '#667eea' }}
-              aria-live="polite"
-            >
-              Welcome, {username} ({userRole.charAt(0).toUpperCase() + userRole.slice(1)})
-            </Typography>
-            <Avatar
-              src={localStorage.getItem('profileAvatar') || undefined}
-              sx={{ width: 36, height: 36, bgcolor: '#667eea' }}
-            >
-              {username ? username[0]?.toUpperCase() : ''}
-            </Avatar>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
+              <Box sx={{ textAlign: 'right' }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 600, color: '#667eea', lineHeight: 1.2 }}
+                  aria-live="polite"
+                >
+                  Welcome, {username} ({userRole.charAt(0).toUpperCase() + userRole.slice(1)})
+                </Typography>
+                {myTeam && (
+                  <Typography variant="body1" sx={{ color: '#667eea', display: 'block', fontWeight: 'bold' }}>
+                    Team: {myTeam.name}
+                  </Typography>
+                )}
+              </Box>
+              <Avatar
+                src={localStorage.getItem('profileAvatar') || undefined}
+                sx={{ width: 36, height: 36, bgcolor: '#667eea' }}
+              >
+                {username ? username[0]?.toUpperCase() : ''}
+              </Avatar>
+            </Box>
           </Box>
-        </Box>
+        )}
 
         <Box
           sx={{
@@ -235,8 +267,8 @@ export default function DashboardShell({ children, title, userRole: propUserRole
             mx: 'auto',
             overflowY: 'auto',
             bgcolor: 'background.default',
-            mt: '72px',
-            minHeight: 'calc(100vh - 72px)',
+            mt: hideTopBar ? 0 : '72px',
+            minHeight: hideTopBar ? '100vh' : 'calc(100vh - 72px)',
           }}
           role="main"
         >

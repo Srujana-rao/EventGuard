@@ -11,6 +11,11 @@ const TeamSchema = new mongoose.Schema({
     ref: 'User',
     default: [],
   }],
+  teamHead: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

@@ -23,6 +23,10 @@ import {
   InputAdornment,
   Divider,
   Alert,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -56,6 +60,7 @@ export default function Teams() {
   const [teamName, setTeamName] = useState('');
   const [searchText, setSearchText] = useState('');
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
+  const [teamHeadId, setTeamHeadId] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   // Synchronous guard against double-submission (state updates are async,
@@ -63,6 +68,17 @@ export default function Teams() {
   const isSubmittingRef = useRef(false);
 
   const token = localStorage.getItem('token');
+
+  // Tell DashboardShell to hide its top bar while the create/edit dialog is open
+  // (Dialog's default z-index sits below the fixed top bar, causing the overlap)
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('teams-dialog-toggle', { detail: { open: openDialog } }));
+    return () => {
+      if (openDialog) {
+        window.dispatchEvent(new CustomEvent('teams-dialog-toggle', { detail: { open: false } }));
+      }
+    };
+  }, [openDialog]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -106,10 +122,18 @@ export default function Teams() {
     return staff.filter((member) => selectedSet.has(getMemberId(member)));
   }, [selectedMemberIds, staff]);
 
+  // Clear team head selection if that person gets unselected as a member
+  useEffect(() => {
+    if (teamHeadId && !selectedMemberIds.includes(teamHeadId)) {
+      setTeamHeadId('');
+    }
+  }, [selectedMemberIds, teamHeadId]);
+
   const resetDialog = () => {
     setTeamName('');
     setSearchText('');
     setSelectedMemberIds([]);
+    setTeamHeadId('');
     setEditingTeam(null);
   };
 
@@ -126,6 +150,7 @@ export default function Teams() {
         .map((member) => getMemberId(member))
         .filter(Boolean)
     );
+    setTeamHeadId(team.teamHead ? getMemberId(team.teamHead) : '');
     setSearchText('');
     setOpenDialog(true);
   };
@@ -158,7 +183,7 @@ export default function Teams() {
     const wasEditing = editingTeam;
 
     try {
-      const payload = { name: nameBeingSaved, members: selectedMemberIds };
+      const payload = { name: nameBeingSaved, members: selectedMemberIds, teamHead: teamHeadId || null };
 
       if (wasEditing) {
         await axios.put(`${API_BASE_URL}/teams/${editingTeam._id}`, payload, {
@@ -302,11 +327,12 @@ export default function Teams() {
             width: '100%',
           }}
         >
-          <Table sx={{ minWidth: 640 }}>
+          <Table sx={{ minWidth: 720 }}>
             <TableHead>
               <TableRow sx={{ bgcolor: '#f8fafc' }}>
                 <TableCell><strong>Team Name</strong></TableCell>
                 <TableCell><strong>Members</strong></TableCell>
+                <TableCell><strong>Team Head</strong></TableCell>
                 <TableCell><strong>Created Date</strong></TableCell>
                 <TableCell align="right"><strong>Actions</strong></TableCell>
               </TableRow>
@@ -316,6 +342,7 @@ export default function Teams() {
                 <TableRow key={team._id} hover>
                   <TableCell>{team.name}</TableCell>
                   <TableCell>{team.members?.length || 0}</TableCell>
+                  <TableCell>{team.teamHead?.username || '—'}</TableCell>
                   <TableCell>{new Date(team.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell align="right">
                     <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
@@ -359,7 +386,14 @@ export default function Teams() {
         </TableContainer>
       )}
 
-      <Dialog open={openDialog} onClose={closeDialog} maxWidth="md" fullWidth>
+      <Dialog
+        open={openDialog}
+        onClose={closeDialog}
+        maxWidth="md"
+        fullWidth
+        scroll="paper"
+        PaperProps={{ sx: { maxHeight: '85vh' } }}
+      >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {editingTeam ? 'Edit Team' : 'Create Team'}
           <IconButton onClick={closeDialog} aria-label="Close">
@@ -475,7 +509,7 @@ export default function Teams() {
                   border: '1px solid #e5e7eb',
                   borderRadius: 2,
                   p: 1.5,
-                  minHeight: 320,
+                  minHeight: 256,
                   maxHeight: 320,
                   overflowY: 'auto',
                 }}
@@ -499,6 +533,35 @@ export default function Teams() {
                 )}
               </Box>
             </Box>
+          </Box>
+
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+              Team Head
+            </Typography>
+            <FormControl fullWidth size="small" disabled={selectedMembers.length === 0}>
+              <InputLabel id="team-head-label">Select team head</InputLabel>
+              <Select
+                labelId="team-head-label"
+                label="Select team head"
+                value={teamHeadId}
+                onChange={(e) => setTeamHeadId(e.target.value)}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {selectedMembers.map((member) => (
+                  <MenuItem key={getMemberId(member)} value={getMemberId(member)}>
+                    {member.username} ({getRoleLabel(member.role)})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {selectedMembers.length === 0 && (
+              <Typography variant="caption" color="text.secondary">
+                Select members first to choose a team head.
+              </Typography>
+            )}
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
@@ -541,8 +604,11 @@ export default function Teams() {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             Created On: {viewingTeam ? new Date(viewingTeam.createdAt).toLocaleDateString() : ''}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             Created By: {viewingTeam?.createdBy?.username || 'Head'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Team Head: {viewingTeam?.teamHead?.username || 'Not assigned'}
           </Typography>
           <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
             Members ({viewingTeam?.members?.length || 0})

@@ -357,11 +357,29 @@ app.get('/api/teams', auth, async (req, res) => {
             return res.status(403).json({ message: 'Only head users can manage teams.' });
         }
 
-        const teams = await Team.find().sort({ createdAt: -1 }).populate('members', 'username role email').populate('createdBy', 'username');
+        const teams = await Team.find()
+            .sort({ createdAt: -1 })
+            .populate('members', 'username role email')
+            .populate('createdBy', 'username')
+            .populate('teamHead', 'username role email');
         res.status(200).json(teams);
     } catch (error) {
         console.error('Error fetching teams:', error.message);
         res.status(500).json({ message: 'Failed to fetch teams.' });
+    }
+});
+
+// Any authenticated staff member can check which team they belong to
+app.get('/api/teams/my-team', auth, async (req, res) => {
+    try {
+        const team = await Team.findOne({ members: req.user.id })
+            .populate('members', 'username role email')
+            .populate('teamHead', 'username role email')
+            .populate('createdBy', 'username');
+        res.status(200).json(team || null);
+    } catch (error) {
+        console.error('Error fetching my-team:', error.message);
+        res.status(500).json({ message: 'Failed to fetch team.' });
     }
 });
 
@@ -371,7 +389,7 @@ app.post('/api/teams', auth, async (req, res) => {
             return res.status(403).json({ message: 'Only head users can create teams.' });
         }
 
-        const { name, members = [] } = req.body;
+        const { name, members = [], teamHead } = req.body;
         const trimmedName = (name || '').trim();
         if (!trimmedName) {
             return res.status(400).json({ message: 'Team name is required.' });
@@ -383,14 +401,24 @@ app.post('/api/teams', auth, async (req, res) => {
         }
 
         const validMemberIds = await User.find({ _id: { $in: members }, isApproved: true, role: { $in: ['ground', 'room'] } }).distinct('_id');
+
+        let resolvedTeamHead = null;
+        if (teamHead && validMemberIds.some((id) => String(id) === String(teamHead))) {
+            resolvedTeamHead = teamHead;
+        }
+
         const team = new Team({
             name: trimmedName,
             members: validMemberIds,
+            teamHead: resolvedTeamHead,
             createdBy: req.user.id,
         });
 
         await team.save();
-        const populatedTeam = await team.populate('members', 'username role email').populate('createdBy', 'username');
+        const populatedTeam = await Team.findById(team._id)
+            .populate('members', 'username role email')
+            .populate('createdBy', 'username')
+            .populate('teamHead', 'username role email');
         res.status(201).json(populatedTeam);
     } catch (error) {
         console.error('Error creating team:', error.message);
@@ -409,7 +437,7 @@ app.put('/api/teams/:id', auth, async (req, res) => {
             return res.status(404).json({ message: 'Team not found.' });
         }
 
-        const { name, members = [] } = req.body;
+        const { name, members = [], teamHead } = req.body;
         const trimmedName = (name || '').trim();
         if (!trimmedName) {
             return res.status(400).json({ message: 'Team name is required.' });
@@ -421,10 +449,20 @@ app.put('/api/teams/:id', auth, async (req, res) => {
         }
 
         const validMemberIds = await User.find({ _id: { $in: members }, isApproved: true, role: { $in: ['ground', 'room'] } }).distinct('_id');
+
+        let resolvedTeamHead = null;
+        if (teamHead && validMemberIds.some((id) => String(id) === String(teamHead))) {
+            resolvedTeamHead = teamHead;
+        }
+
         team.name = trimmedName;
         team.members = validMemberIds;
+        team.teamHead = resolvedTeamHead;
         await team.save();
-        const populatedTeam = await team.populate('members', 'username role email').populate('createdBy', 'username');
+        const populatedTeam = await Team.findById(team._id)
+            .populate('members', 'username role email')
+            .populate('createdBy', 'username')
+            .populate('teamHead', 'username role email');
         res.status(200).json(populatedTeam);
     } catch (error) {
         console.error('Error updating team:', error.message);
