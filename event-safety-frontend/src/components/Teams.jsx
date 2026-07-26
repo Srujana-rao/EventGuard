@@ -45,7 +45,7 @@ const getRoleLabel = (role) => {
 
 const getMemberId = (member) => String(member?._id || member?.id || '');
 
-export default function Teams() {
+export default function Teams({ userRole }) {
   const [teams, setTeams] = useState([]);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +65,8 @@ export default function Teams() {
 
   // Synchronous guard against double-submission (state updates are async,
   // so a fast double-click can fire two requests before `submitting` re-renders)
+ const isHead = userRole === 'head';
+
   const isSubmittingRef = useRef(false);
 
   const token = localStorage.getItem('token');
@@ -81,8 +83,9 @@ export default function Teams() {
   }, [openDialog]);
 
   const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
+    if (isHead) {
       const [teamRes, staffRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/teams`, { headers: { 'x-auth-token': token } }),
         axios.get(`${API_BASE_URL}/users`),
@@ -93,14 +96,18 @@ export default function Teams() {
           (member) => member.role === 'ground' || member.role === 'room'
         )
       );
-      setError('');
-    } catch (err) {
-      setError('Failed to load teams and staff information.');
-      console.error('Error fetching teams:', err);
-    } finally {
-      setLoading(false);
+    } else {
+      const teamRes = await axios.get(`${API_BASE_URL}/teams`, { headers: { 'x-auth-token': token } });
+      setTeams(teamRes.data || []);
     }
-  }, [token]);
+    setError('');
+  } catch (err) {
+    setError('Failed to load teams and staff information.');
+    console.error('Error fetching teams:', err);
+  } finally {
+    setLoading(false);
+  }
+}, [token, isHead]);
 
   useEffect(() => {
     fetchData();
@@ -272,32 +279,36 @@ export default function Teams() {
   return (
     <Paper elevation={4} sx={{ p: { xs: 2, md: 4 }, borderRadius: 3 }}>
       <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          mb: 3,
-          gap: 2,
-          flexWrap: 'wrap',
-        }}
-      >
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="h5" fontWeight={700} gutterBottom>
-            Team Management
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Create and manage response teams by assigning available staff members.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<PersonAddIcon />}
-          onClick={openCreateDialog}
-          sx={{ flexShrink: 0, textTransform: 'none', fontWeight: 600 }}
-        >
-          Create Team
-        </Button>
-      </Box>
+  sx={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: { xs: 'flex-start', sm: 'center' },
+    mb: 3,
+    gap: 2,
+    flexWrap: 'wrap',
+  }}
+>
+  <Box sx={{ flex: 1, minWidth: 0 }}>
+    <Typography variant="h5" fontWeight={700} gutterBottom>
+      Team Management
+    </Typography>
+    <Typography variant="body2" color="text.secondary">
+      {isHead
+        ? 'Create and manage response teams by assigning available staff members.'
+        : 'View response teams and their assigned members.'}
+    </Typography>
+  </Box>
+  {isHead && (
+    <Button
+      variant="contained"
+      startIcon={<PersonAddIcon />}
+      onClick={openCreateDialog}
+      sx={{ flexShrink: 0, textTransform: 'none', fontWeight: 600 }}
+    >
+      Create Team
+    </Button>
+  )}
+</Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
@@ -345,40 +356,44 @@ export default function Teams() {
                   <TableCell>{team.teamHead?.username || '—'}</TableCell>
                   <TableCell>{new Date(team.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell align="right">
-                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<VisibilityIcon />}
-                        onClick={() => {
-                          setViewingTeam(team);
-                          setViewDialog(true);
-                        }}
-                        sx={{ textTransform: 'none' }}
-                      >
-                        View
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<EditIcon />}
-                        onClick={() => openEditDialog(team)}
-                        sx={{ textTransform: 'none' }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="small"
-                        color="error"
-                        variant="outlined"
-                        startIcon={<DeleteIcon />}
-                        onClick={() => confirmDelete(team)}
-                        sx={{ textTransform: 'none' }}
-                      >
-                        Delete
-                      </Button>
-                    </Box>
-                  </TableCell>
+  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+    <Button
+      size="small"
+      variant="outlined"
+      startIcon={<VisibilityIcon />}
+      onClick={() => {
+        setViewingTeam(team);
+        setViewDialog(true);
+      }}
+      sx={{ textTransform: 'none' }}
+    >
+      View
+    </Button>
+    {isHead && (
+      <>
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<EditIcon />}
+          onClick={() => openEditDialog(team)}
+          sx={{ textTransform: 'none' }}
+        >
+          Edit
+        </Button>
+        <Button
+          size="small"
+          color="error"
+          variant="outlined"
+          startIcon={<DeleteIcon />}
+          onClick={() => confirmDelete(team)}
+          sx={{ textTransform: 'none' }}
+        >
+          Delete
+        </Button>
+      </>
+    )}
+  </Box>
+</TableCell>
                 </TableRow>
               ))}
             </TableBody>

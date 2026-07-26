@@ -21,6 +21,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import Groups2Icon from '@mui/icons-material/Groups2';
 import SecurityIcon from '@mui/icons-material/Security';
 
+
 const sidebarGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)';
 const sidebarWidth = 220;
 
@@ -92,39 +93,47 @@ export default function SidebarMenu({
   ];
 
   const nonHeadButtons = [
-    {
-      label: 'Main Dashboard',
-      to: '/dashboard',
-      icon: <NotificationsActiveIcon />,
-      showBadge: false,
-      badgeContent: null,
-      active: matchDashboard,
-    },
-    {
-      label: 'Staff Info',
-      to: '/staff-info',
-      icon: <GroupsIcon />,
-      showBadge: false,
-      badgeContent: null,
-      active: matchStaffInfo,
-    },
-    {
-      label: 'Meetings',
-      to: '/meetings',
-      icon: <EventNoteIcon />,
-      showBadge: meetingsPending > 0,
-      badgeContent: meetingsPending,
-      active: matchMeetings,
-    },
-    {
-      label: 'Settings',
-      to: '/settings',
-      icon: <SettingsIcon />,
-      showBadge: false,
-      badgeContent: null,
-      active: matchSettings,
-    },
-  ];
+  {
+    label: 'Main Dashboard',
+    to: '/dashboard',
+    icon: <NotificationsActiveIcon />,
+    showBadge: false,
+    badgeContent: null,
+    active: matchDashboard,
+  },
+  {
+    label: 'Staff Info',
+    to: '/staff-info',
+    icon: <GroupsIcon />,
+    showBadge: false,
+    badgeContent: null,
+    active: matchStaffInfo,
+  },
+  {
+    label: 'Meetings',
+    to: '/meetings',
+    icon: <EventNoteIcon />,
+    showBadge: meetingsPending > 0,
+    badgeContent: meetingsPending,
+    active: matchMeetings,
+  },
+  {
+    label: 'Teams',
+    to: '/teams',
+    icon: <Groups2Icon />,
+    showBadge: false,
+    badgeContent: null,
+    active: matchTeams,
+  },
+  {
+    label: 'Settings',
+    to: '/settings',
+    icon: <SettingsIcon />,
+    showBadge: false,
+    badgeContent: null,
+    active: matchSettings,
+  },
+];
 
   const buttons = userRole === 'head' ? headButtons : nonHeadButtons;
 

@@ -353,10 +353,7 @@ app.delete('/api/alerts/:id', auth, async (req, res) => {
 // --- Teams CRUD ---
 app.get('/api/teams', auth, async (req, res) => {
     try {
-        if (req.user.role !== 'head') {
-            return res.status(403).json({ message: 'Only head users can manage teams.' });
-        }
-
+        // Any authenticated staff member can view teams — only head can create/edit/delete
         const teams = await Team.find()
             .sort({ createdAt: -1 })
             .populate('members', 'username role email')

@@ -433,21 +433,17 @@ function App() {
           }
         />
         <Route
-          path="/teams"
-          element={
-            isAuthenticated ? (
-              userRole === 'head' ? (
-                <DashboardShell title="Teams" userRole={userRole} username={username}>
-                  <Teams />
-                </DashboardShell>
-              ) : (
-                <Navigate to="/dashboard" replace />
-              )
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
+  path="/teams"
+  element={
+    isAuthenticated ? (
+      <DashboardShell title="Teams" userRole={userRole} username={username}>
+        <Teams userRole={userRole} />
+      </DashboardShell>
+    ) : (
+      <Navigate to="/login" replace />
+    )
+  }
+/>
         <Route
           path="/*"
           element={
