@@ -10,6 +10,7 @@ export default function SocialSuccess({ setAuth }) {
     const token = searchParams.get('token');
     const username = searchParams.get('username');
     const role = searchParams.get('role');
+    const userId = searchParams.get('userId');
 
     if (!token) {
       navigate('/login');
@@ -17,7 +18,7 @@ export default function SocialSuccess({ setAuth }) {
     }
 
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify({ username, role }));
+    localStorage.setItem('user', JSON.stringify({ id: userId, username, role }));
     setAuth(true);
 
     setTimeout(() => {

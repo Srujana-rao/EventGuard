@@ -389,6 +389,7 @@ export default function Dashboard({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [myTeam, setMyTeam] = useState(null);
+  const [incidentsPending, setIncidentsPending] = useState(0);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -421,6 +422,29 @@ export default function Dashboard({
     };
   }, []);
 
+  useEffect(() => {
+  let isMounted = true;
+  const token = localStorage.getItem('token');
+  if (!token) return undefined;
+
+  const refreshIncidentSummary = () => {
+    axios
+      .get(`${API_BASE_URL}/incident-reports/summary`, { headers: { 'x-auth-token': token } })
+      .then((res) => {
+        if (isMounted) setIncidentsPending(res.data?.pending || 0);
+      })
+      .catch(() => {});
+  };
+
+  refreshIncidentSummary();
+
+  window.addEventListener('focus', refreshIncidentSummary);
+  return () => {
+    isMounted = false;
+    window.removeEventListener('focus', refreshIncidentSummary);
+  };
+}, []);
+
   return (
     <Box
       sx={{
@@ -437,6 +461,7 @@ export default function Dashboard({
         userRole={userRole}
         approvalsPending={approvalsPending}
         meetingsPending={meetingNotificationCount}
+        incidentsPending={incidentsPending}
         mobileOpen={mobileOpen}
         onDrawerToggle={handleDrawerToggle}
         onLogout={handleLogout}

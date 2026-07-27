@@ -17,6 +17,7 @@ import Settings from './components/Settings';
 import Teams from './components/Teams';
 import PendingApproval from './components/PendingApproval';
 import SocialSuccess from './components/SocialSuccess';
+import Incidents from './components/Incidents';
 
 // Socket.IO client instance
 import { socket } from './socket';
@@ -454,6 +455,18 @@ function App() {
             )
           }
         />
+        <Route
+  path="/incidents"
+  element={
+    isAuthenticated ? (
+      <DashboardShell title="Incidents" userRole={userRole} username={username}>
+        <Incidents userRole={userRole} />
+      </DashboardShell>
+    ) : (
+      <Navigate to="/login" replace />
+    )
+  }
+/>
       </Routes>
     </Router>
   );

@@ -23,6 +23,7 @@ export default function DashboardShell({ children, title, userRole: propUserRole
   const [meetingsPending, setMeetingsPending] = useState(0);
   const [myTeam, setMyTeam] = useState(null);
   const [hideTopBar, setHideTopBar] = useState(false);
+  const [incidentsPending, setIncidentsPending] = useState(0);
 
   const { username, userRole } = useMemo(() => {
     if (propUserRole && propUsername) {
@@ -67,6 +68,14 @@ export default function DashboardShell({ children, title, userRole: propUserRole
       } catch {
         // non-critical
       }
+try {
+  const incidentSummaryRes = await axios.get(`${API_BASE_URL}/incident-reports/summary`, config);
+  if (isMounted) {
+    setIncidentsPending(incidentSummaryRes.data?.pending || 0);
+  }
+} catch {
+  // non-critical
+}
 
       if (userRole === 'head') {
         try {
@@ -97,14 +106,29 @@ export default function DashboardShell({ children, title, userRole: propUserRole
     const handleMeetingDeleted = () => {
       setMeetingsPending((prev) => (prev > 0 ? prev - 1 : 0));
     };
-
+   const handleIncidentUpdate = () => {
+  // Re-fetch the summary count rather than guessing increment/decrement locally
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  axios
+    .get(`${API_BASE_URL}/incident-reports/summary`, { headers: { 'x-auth-token': token } })
+    .then((res) => setIncidentsPending(res.data?.pending || 0))
+    .catch(() => {});
+};
     socket.on('new-meeting', handleNewMeeting);
     socket.on('meeting-deleted', handleMeetingDeleted);
+    socket.on('incident-case-created', handleIncidentUpdate);
+    socket.on('incident-case-updated', handleIncidentUpdate);
+    socket.on('incident-assigned', handleIncidentUpdate);
+    
 
     return () => {
       isMounted = false;
       socket.off('new-meeting', handleNewMeeting);
       socket.off('meeting-deleted', handleMeetingDeleted);
+      socket.off('incident-case-created', handleIncidentUpdate);
+      socket.off('incident-case-updated', handleIncidentUpdate);
+      socket.off('incident-assigned', handleIncidentUpdate);
     };
   }, [userRole]);
 
@@ -136,6 +160,7 @@ export default function DashboardShell({ children, title, userRole: propUserRole
         userRole={userRole}
         approvalsPending={approvalsPending}
         meetingsPending={meetingsPending}
+        incidentsPending={incidentsPending}
         mobileOpen={mobileOpen}
         onDrawerToggle={handleDrawerToggle}
         onLogout={handleLogout}

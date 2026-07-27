@@ -290,7 +290,7 @@ export default function Teams({ userRole }) {
 >
   <Box sx={{ flex: 1, minWidth: 0 }}>
     <Typography variant="h5" fontWeight={700} gutterBottom>
-      Team Management
+      Teams
     </Typography>
     <Typography variant="body2" color="text.secondary">
       {isHead

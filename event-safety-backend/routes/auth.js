@@ -123,7 +123,7 @@ router.get('/google/callback',
       }
     };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' });
-    res.redirect(`http://localhost:5173/social-success?token=${token}&username=${encodeURIComponent(req.user.username)}&role=${req.user.role}`);
+    res.redirect(`http://localhost:5173/social-success?token=${token}&username=${encodeURIComponent(req.user.username)}&role=${req.user.role}&userId=${req.user.id}`);
   }
 );
 

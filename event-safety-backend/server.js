@@ -1,91 +1,75 @@
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
-const path = require('path'); // Node.js path module, needed for file paths
+const path = require('path');
 
-const authRoutes = require('./routes/auth'); // Import authentication routes
-const User = require('./models/User'); // Import User model
-const Meeting = require('./models/Meeting'); // Import Meeting model
-const Team = require('./models/Team'); // Import Team model
-const jwt = require('jsonwebtoken'); // NEW: Import JWT for Socket.IO auth
-const auth = require('./routes/auth').auth; // FIX: Import auth middleware directly for protected routes (like delete)
-// const authorizeRole = require('./routes/auth').authorizeRole; // Optional: import if needed directly in server.js routes
+const authRoutes = require('./routes/auth');
+const User = require('./models/User');
+const Meeting = require('./models/Meeting');
+const Team = require('./models/Team');
+const Counter = require('./models/Counter');
+const SafetyIncident = require('./models/SafetyIncident');
+const jwt = require('jsonwebtoken');
+const auth = require('./routes/auth').auth;
 
-const http = require('http'); // Node.js native HTTP module
-const { Server } = require("socket.io"); // Socket.IO server class
+const http = require('http');
+const { Server } = require("socket.io");
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// --- Create HTTP server and attach Socket.IO ---
-const server = http.createServer(app); // Create HTTP server from Express app
+const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173", // Allow your React frontend to connect
+        origin: "http://localhost:5173",
         methods: ["GET", "POST"]
     }
 });
-// ----------------------------------------------------
 
-// --- Multer configurations for different upload types ---
-// 1. For alerts AND incidents: Disk storage (saves to 'uploads' folder)
-const mediaStorage = multer.diskStorage({ // Renamed from alertStorage for clarity, used for both alerts and incidents
+const mediaStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/'); // Files will be saved in the 'uploads' directory
+        cb(null, 'uploads/');
     },
     filename: (req, file, cb) => {
-        // Generate a unique filename: fieldname-timestamp.ext
         cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
     }
 });
-const uploadMediaToDisk = multer({ storage: mediaStorage }); // Renamed from uploadAlertMedia
+const uploadMediaToDisk = multer({ storage: mediaStorage });
 
-// 2. For uploads: memory storage (kept minimal)
-// -------------------------------------------------------------------------
-
-// Middleware
-app.use(cors()); // Enable CORS for all routes (important for frontend communication)
-app.use(express.json()); // Enable JSON body parsing for incoming requests
-// --- Serve static files from the 'uploads' directory ---
-// Makes files in 'uploads' accessible via /uploads URL from the frontend
+app.use(cors());
+app.use(express.json());
 app.use('/uploads', express.static('uploads'));
-// -----------------------------------------------------------
-const session = require('express-session');
-const passport = require('./passport'); // adjust path if passport.js is located elsewhere
 
-// Add Express session middleware; place this before route handlers
+const session = require('express-session');
+const passport = require('./passport');
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-session-secret-key', // better to use .env variable
+  secret: process.env.SESSION_SECRET || 'your-session-secret-key',
   resave: false,
   saveUninitialized: false,
 }));
 
-// Initialize Passport and use session middleware
 app.use(passport.initialize());
 app.use(passport.session());
 
-// MongoDB Connection
 const mongoURI = process.env.MONGO_URI;
 
 mongoose.connect(mongoURI)
     .then(() => console.log('MongoDB connected successfully!'))
     .catch(err => console.error('MongoDB connection error:', err));
 
-// Mongoose Schema and Model for Incidents
 const incidentSchema = new mongoose.Schema({
     type: { type: String, required: true },
     description: { type: String, default: '' },
     location: { type: String, required: true },
     timestamp: { type: Date, default: Date.now },
     visionLabels: { type: Array, default: [] },
-    imageUrl: { type: String }, // To store the URL of the uploaded image for incidents
-    // (Removed AI-generated fields: severity, actions)
+    imageUrl: { type: String },
 }, { timestamps: true });
 const Incident = mongoose.model('Incident', incidentSchema);
 
-// --- NEW: Define Mongoose Schema and Model for Alerts ---
 const alertSchema = new mongoose.Schema({
     message: { type: String, trim: true },
     mediaUrl: { type: String, default: null },
@@ -93,15 +77,35 @@ const alertSchema = new mongoose.Schema({
     sender: { type: String, required: true },
     senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     senderRole: { type: String, required: true },
-    targetRole: { type: String, enum: ['all', 'head', 'room', 'ground', null], default: null }, // Null means 'all'
-    priority: { type: String, enum: ['urgent', 'important', 'info'], default: 'info' }, // NEW: Priority field
-    locationTag: { type: String, trim: true, default: '' } // NEW: Location Tag field
+    targetRole: { type: String, enum: ['all', 'head', 'room', 'ground', null], default: null },
+    priority: { type: String, enum: ['urgent', 'important', 'info'], default: 'info' },
+    locationTag: { type: String, trim: true, default: '' }
 }, { timestamps: true });
 const Alert = mongoose.model('Alert', alertSchema);
-// --------------------------------------------------------
 
+// --- Incident case helpers ---
+async function generateIncidentId() {
+    const counter = await Counter.findOneAndUpdate(
+        { name: 'incident' },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+    );
+    return `INC-${counter.seq}`;
+}
 
-// --- Map to store connected users by their roles ---
+function mapAlertPriorityToIncidentPriority(alertPriority) {
+    switch (alertPriority) {
+        case 'urgent':
+            return 'Critical';
+        case 'important':
+            return 'Medium';
+        case 'info':
+        default:
+            return 'Low';
+    }
+}
+// -----------------------------------------
+
 const connectedUsersByRole = {
     head: new Set(),
     room: new Set(),
@@ -109,13 +113,10 @@ const connectedUsersByRole = {
 };
 const socketToUserId = new Map();
 const userIdToSocketId = new Map();
-// --------------------------------------------------------
 
-// --- Socket.IO Event Handling ---
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
 
-    // Handle authentication on socket connection
     socket.on('authenticate', async (token) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -123,17 +124,15 @@ io.on('connection', (socket) => {
 
             if (!user || !user.isApproved) {
                 console.warn(`Socket auth failed: User ${decoded.user.id} not found or not approved.`);
-                socket.disconnect(); // Disconnect unapproved or invalid users
+                socket.disconnect();
                 return;
             }
 
-            // Store user info on the socket object (always use string IDs for presence checks)
             const userId = String(user._id);
             socket.user = { id: userId, username: user.username, role: user.role };
             socketToUserId.set(socket.id, userId);
             userIdToSocketId.set(userId, socket.id);
 
-            // Add socket to appropriate role set
             connectedUsersByRole[user.role].add(socket.id);
             socket.join(user.role);
             console.log(`User ${user.username} (${user.role}) authenticated via Socket.IO. Current connections:`, {
@@ -141,7 +140,6 @@ io.on('connection', (socket) => {
                 room: connectedUsersByRole.room.size,
                 ground: connectedUsersByRole.ground.size,
             });
-            // Let the client know authentication was successful
             socket.emit('authenticated', { status: true, user: { id: userId, username: user.username, role: user.role } });
             io.emit('presence-updated');
 
@@ -158,21 +156,20 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle a 'send-alert' event from a client
-    socket.on('send-alert', async (alertData) => { // Made async for DB save
-        if (!socket.user) { // Ensure user is authenticated before sending alerts
+    socket.on('send-alert', async (alertData) => {
+        if (!socket.user) {
             console.warn(`Unauthenticated user ${socket.id} tried to send alert.`);
             return;
         }
 
-        const { targetRole, message, mediaUrl, mediaType, priority, locationTag } = alertData; // Destructure NEW fields
+        const { targetRole, message, mediaUrl, mediaType, priority, locationTag } = alertData;
 
         const fullAlert = {
             message,
             sender: alertData.sender || socket.user.username,
             senderId: alertData.senderId || socket.user.id,
             senderRole: alertData.senderRole || socket.user.role,
-            timestamp: new Date().toISOString(), // Use ISO string for consistency
+            timestamp: new Date().toISOString(),
             mediaUrl,
             mediaType,
             targetRole,
@@ -183,21 +180,16 @@ io.on('connection', (socket) => {
         console.log(`Alert from ${fullAlert.sender} (${fullAlert.senderRole}) (Target: ${targetRole || 'All'}) (Priority: ${priority || 'info'}) (Location: ${locationTag || 'N/A'}) :`, fullAlert.message);
 
         try {
-            // --- Save alert to MongoDB before emitting ---
             const newAlert = new Alert(fullAlert);
             await newAlert.save();
             console.log('Alert saved to DB:', newAlert._id);
-            // --------------------------------------------------
 
-            // --- Emit based on targetRole (Actual Filtering Logic) ---
-            // Include the _id from the saved alert so frontend can identify it
             if (targetRole && connectedUsersByRole[targetRole]) {
                 console.log(`Emitting alert to ${targetRole} members.`);
                 for (const targetSocketId of connectedUsersByRole[targetRole]) {
                     io.to(targetSocketId).emit('receive-alert', { ...fullAlert, _id: newAlert._id });
                 }
             } else {
-                // If targetRole is 'all' (null from frontend) or invalid/unspecified, emit to ALL authenticated users
                 console.log('Emitting alert to all authenticated members (default).');
                 for (const roleSet of Object.values(connectedUsersByRole)) {
                     for (const targetSocketId of roleSet) {
@@ -205,15 +197,35 @@ io.on('connection', (socket) => {
                     }
                 }
             }
+
+            // Auto-create an Incident case for this alert
+            try {
+                const incidentId = await generateIncidentId();
+                const newIncidentCase = new SafetyIncident({
+                    incidentId,
+                    type: fullAlert.message || 'Incident',
+                    location: fullAlert.locationTag || '',
+                    priority: mapAlertPriorityToIncidentPriority(fullAlert.priority),
+                    status: 'Open',
+                    reportedBy: fullAlert.sender,
+                    reportedByRole: fullAlert.senderRole,
+                    sourceAlertId: newAlert._id,
+                });
+                await newIncidentCase.save();
+                io.emit('incident-case-created', newIncidentCase);
+                console.log('Incident case auto-created:', newIncidentCase.incidentId);
+            } catch (incidentErr) {
+                console.error('Error auto-creating incident case:', incidentErr.message);
+            }
+
         } catch (error) {
             console.error('Error saving or emitting alert:', error.message);
         }
     });
 
-    // Handle disconnection
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
-        if (socket.user) { // Only remove if the socket was authenticated
+        if (socket.user) {
             connectedUsersByRole[socket.user.role].delete(socket.id);
             socketToUserId.delete(socket.id);
             userIdToSocketId.delete(socket.user.id);
@@ -226,28 +238,23 @@ io.on('connection', (socket) => {
         }
     });
 });
-// ------------------------------------------------------------
 
 authRoutes.setIo(io);
 
-// --- API Routes ---
 app.get('/', (req, res) => {
     res.send('Event Safety Backend API is running!');
 });
 
-// UPDATED: Incident POST route to accept and save imageUrl
 app.post('/api/incidents', async (req, res) => {
     try {
-        const { type, location, imageUrl, description } = req.body; // NEW: include description
+        const { type, location, imageUrl, description } = req.body;
         if (!type || !location) {
             return res.status(400).json({ message: 'Type and location are required.' });
         }
 
-        // Create incident without AI fields first
         let newIncident = new Incident({ type, location, imageUrl, description });
         await newIncident.save();
 
-        // No AI processing: save and emit incident as-is
         io.emit('new-incident', newIncident);
         res.status(201).json(newIncident);
     } catch (error) {
@@ -256,8 +263,7 @@ app.post('/api/incidents', async (req, res) => {
     }
 });
 
-// UPDATED: Incident DELETE route
-app.delete('/api/incidents/:id', auth, async (req, res) => { // Added 'auth' middleware
+app.delete('/api/incidents/:id', auth, async (req, res) => {
     try {
         const incident = await Incident.findById(req.params.id);
 
@@ -265,25 +271,19 @@ app.delete('/api/incidents/:id', auth, async (req, res) => { // Added 'auth' mid
             return res.status(404).json({ msg: 'Incident not found' });
         }
 
-        // Optional: Authorization check - only allow user who created it, or specific roles to delete
-        // if (incident.reporterId.toString() !== req.user.id && req.user.role !== 'head') {
-        //     return res.status(401).json({ msg: 'Not authorized to delete this incident' });
-        // }
-
-        await Incident.deleteOne({ _id: req.params.id }); // Use deleteOne for Mongoose 6+
+        await Incident.deleteOne({ _id: req.params.id });
         
-        io.emit('incident-deleted', req.params.id); // Inform clients about deleted incident
+        io.emit('incident-deleted', req.params.id);
 
         res.json({ msg: 'Incident removed' });
     } catch (error) {
         console.error(error.message);
-        if (error.kind === 'ObjectId') { // Handle invalid incident ID format
+        if (error.kind === 'ObjectId') {
             return res.status(404).json({ msg: 'Incident not found' });
         }
         res.status(500).send('Server error');
     }
 });
-
 
 app.get('/api/incidents', async (req, res) => {
     try {
@@ -295,33 +295,23 @@ app.get('/api/incidents', async (req, res) => {
     }
 });
 
-// (Removed AI chat proxy route)
-
-// (Removed AI image analysis route)
-
-// --- Alert Media Upload Route (reusing for incident media too for simplicity) ---
-app.post('/api/alert-media-upload', uploadMediaToDisk.single('alertMedia'), (req, res) => { // 'alertMedia' is the field name
+app.post('/api/alert-media-upload', uploadMediaToDisk.single('alertMedia'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: 'No media file uploaded.' });
     }
-    // Respond with the URL where the file can be accessed
-    const mediaUrl = `/uploads/${req.file.filename}`; // This URL is relative to your backend's base URL
+    const mediaUrl = `/uploads/${req.file.filename}`;
     res.status(200).json({ message: 'Media uploaded successfully!', mediaUrl: mediaUrl });
 });
-// ------------------------------------
 
-// --- API Route to fetch historical alerts ---
 app.get('/api/alerts', async (req, res) => {
     try {
-        // You might want to add authentication middleware 'auth' here later
-        const alerts = await Alert.find().sort({ createdAt: -1 }).limit(50); // Get latest 50 alerts by createdAt
+        const alerts = await Alert.find().sort({ createdAt: -1 }).limit(50);
         res.status(200).json(alerts);
     } catch (error) {
         console.error('Error fetching historical alerts:', error.message);
         res.status(500).json({ message: 'Failed to fetch historical alerts.' });
     }
 });
-// -------------------------------------------------
 
 app.delete('/api/alerts/:id', auth, async (req, res) => {
     try {
@@ -353,7 +343,6 @@ app.delete('/api/alerts/:id', auth, async (req, res) => {
 // --- Teams CRUD ---
 app.get('/api/teams', auth, async (req, res) => {
     try {
-        // Any authenticated staff member can view teams — only head can create/edit/delete
         const teams = await Team.find()
             .sort({ createdAt: -1 })
             .populate('members', 'username role email')
@@ -366,7 +355,6 @@ app.get('/api/teams', auth, async (req, res) => {
     }
 });
 
-// Any authenticated staff member can check which team they belong to
 app.get('/api/teams/my-team', auth, async (req, res) => {
     try {
         const team = await Team.findOne({ members: req.user.id })
@@ -493,6 +481,171 @@ app.delete('/api/teams/:id', auth, async (req, res) => {
 });
 // --- End Teams CRUD ---
 
+// --- Incident Management (SafetyIncident) ---
+app.get('/api/incident-reports', auth, async (req, res) => {
+    try {
+        const incidents = await SafetyIncident.find()
+            .sort({ createdAt: -1 })
+            .populate({
+                path: 'assignedTeam',
+                select: 'name members teamHead',
+                populate: [
+                    { path: 'members', select: 'username role' },
+                    { path: 'teamHead', select: 'username role' },
+                ],
+            });
+        res.status(200).json(incidents);
+    } catch (error) {
+        console.error('Error fetching incident reports:', error.message);
+        res.status(500).json({ message: 'Failed to fetch incident reports.' });
+    }
+});
+
+app.get('/api/incident-reports/summary', auth, async (req, res) => {
+    try {
+        if (req.user.role === 'head') {
+            const openCount = await SafetyIncident.countDocuments({ status: 'Open' });
+            return res.status(200).json({ pending: openCount });
+        }
+
+        const myTeam = await Team.findOne({ members: req.user.id });
+        if (!myTeam) {
+            return res.status(200).json({ pending: 0 });
+        }
+
+        const pending = await SafetyIncident.countDocuments({
+            assignedTeam: myTeam._id,
+            status: { $in: ['Assigned', 'In Progress'] },
+        });
+        res.status(200).json({ pending });
+    } catch (error) {
+        console.error('Error fetching incident summary:', error.message);
+        res.status(500).json({ message: 'Failed to fetch incident summary.' });
+    }
+});
+
+app.patch('/api/incident-reports/:id/assign', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'head') {
+            return res.status(403).json({ message: 'Only head users can assign incidents.' });
+        }
+
+        const { teamId } = req.body;
+        if (!teamId) {
+            return res.status(400).json({ message: 'teamId is required.' });
+        }
+
+        const incidentCase = await SafetyIncident.findById(req.params.id);
+        if (!incidentCase) {
+            return res.status(404).json({ message: 'Incident not found.' });
+        }
+
+        const team = await Team.findById(teamId).populate('members', 'username role').populate('teamHead', 'username role');
+        if (!team) {
+            return res.status(404).json({ message: 'Team not found.' });
+        }
+
+        incidentCase.assignedTeam = team._id;
+        incidentCase.status = 'Assigned';
+        await incidentCase.save();
+
+        const populatedIncident = await SafetyIncident.findById(incidentCase._id).populate({
+            path: 'assignedTeam',
+            select: 'name members teamHead',
+            populate: [
+                { path: 'members', select: 'username role' },
+                { path: 'teamHead', select: 'username role' },
+            ],
+        });
+
+        const notifyIds = new Set();
+        (team.members || []).forEach((m) => notifyIds.add(String(m._id)));
+        if (team.teamHead) notifyIds.add(String(team.teamHead._id));
+
+        notifyIds.forEach((memberId) => {
+            const socketId = userIdToSocketId.get(memberId);
+            if (socketId) {
+                io.to(socketId).emit('incident-assigned', populatedIncident);
+            }
+        });
+
+        io.emit('incident-case-updated', populatedIncident);
+
+        res.status(200).json(populatedIncident);
+    } catch (error) {
+        console.error('Error assigning incident:', error.message);
+        if (error.kind === 'ObjectId') {
+            return res.status(404).json({ message: 'Incident not found.' });
+        }
+        res.status(500).json({ message: 'Failed to assign incident.' });
+    }
+});
+
+app.patch('/api/incident-reports/:id/status', auth, async (req, res) => {
+    try {
+        const { status } = req.body;
+        if (!['In Progress', 'Resolved'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid status transition requested.' });
+        }
+
+        const incidentCase = await SafetyIncident.findById(req.params.id).populate({
+            path: 'assignedTeam',
+            select: 'name members teamHead',
+            populate: [
+                { path: 'members', select: 'username role' },
+                { path: 'teamHead', select: 'username role' },
+            ],
+        });
+
+        if (!incidentCase) {
+            return res.status(404).json({ message: 'Incident not found.' });
+        }
+
+        if (!incidentCase.assignedTeam) {
+            return res.status(400).json({ message: 'Incident has not been assigned to a team yet.' });
+        }
+
+        const team = incidentCase.assignedTeam;
+        const memberIds = (team.members || []).map((m) => String(m._id));
+        const isTeamMember = memberIds.includes(String(req.user.id));
+        const isTeamHead = team.teamHead && String(team.teamHead._id) === String(req.user.id);
+
+        if (status === 'In Progress') {
+            if (!isTeamMember && !isTeamHead) {
+                return res.status(403).json({ message: 'Only assigned team members can start work on this incident.' });
+            }
+            if (incidentCase.status !== 'Assigned') {
+                return res.status(400).json({ message: 'Incident must be Assigned before it can move to In Progress.' });
+            }
+            incidentCase.status = 'In Progress';
+        }
+
+        if (status === 'Resolved') {
+            if (!isTeamHead) {
+                return res.status(403).json({ message: 'Only the assigned team head can mark this incident as resolved.' });
+            }
+            if (incidentCase.status !== 'In Progress') {
+                return res.status(400).json({ message: 'Incident must be In Progress before it can be resolved.' });
+            }
+            incidentCase.status = 'Resolved';
+            incidentCase.resolvedAt = new Date();
+        }
+
+        await incidentCase.save();
+
+        io.emit('incident-case-updated', incidentCase);
+
+        res.status(200).json(incidentCase);
+    } catch (error) {
+        console.error('Error updating incident status:', error.message);
+        if (error.kind === 'ObjectId') {
+            return res.status(404).json({ message: 'Incident not found.' });
+        }
+        res.status(500).json({ message: 'Failed to update incident status.' });
+    }
+});
+// --- End Incident Management ---
+
 app.get('/api/users', async (_req, res) => {
     try {
         const users = await User.find({ isApproved: true }).select('username role email');
@@ -515,11 +668,7 @@ app.get('/api/users', async (_req, res) => {
         res.status(500).json({ message: 'Failed to fetch users.' });
     }
 });
-// -------------------------------------------------
 
-
-// --- Meeting Routes ---
-// Create a new meeting (HEAD only)
 app.post('/api/meetings', auth, async (req, res) => {
     try {
         if (req.user.role !== 'head') {
@@ -550,7 +699,6 @@ app.post('/api/meetings', auth, async (req, res) => {
 
         await meeting.save();
 
-        // Emit meeting over Socket.IO — always include heads so organizers see it too
         if (targetRole === 'all') {
             io.emit('new-meeting', meeting);
         } else {
@@ -567,11 +715,9 @@ app.post('/api/meetings', auth, async (req, res) => {
     }
 });
 
-// Get meetings visible to the current user
 app.get('/api/meetings', auth, async (req, res) => {
     try {
         const userRole = req.user.role;
-        // Heads manage meetings — show all of them. Other roles only see theirs + "all".
         const meetings =
             userRole === 'head'
                 ? await Meeting.find().sort({ meetingTime: 1 })
@@ -585,9 +731,7 @@ app.get('/api/meetings', auth, async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch meetings.' });
     }
 });
-// -------------------------------------------------
 
-// Delete meeting (HEAD only)
 app.delete('/api/meetings/:id', auth, async (req, res) => {
     try {
         if (req.user.role !== 'head') {
@@ -602,7 +746,6 @@ app.delete('/api/meetings/:id', auth, async (req, res) => {
 
         await Meeting.deleteOne({ _id: id });
 
-        // Inform all connected clients so they remove it from their lists
         io.emit('meeting-deleted', id);
 
         res.status(200).json({ message: 'Meeting deleted.' });
@@ -611,13 +754,10 @@ app.delete('/api/meetings/:id', auth, async (req, res) => {
         res.status(500).json({ message: 'Failed to delete meeting.' });
     }
 });
-// -------------------------------------------------
 
+app.use('/api/auth', authRoutes.router);
 
-app.use('/api/auth', authRoutes.router); // Use Auth Routes
-
-// --- MODIFIED: Listen on http server, not app directly ---
-server.listen(port, () => { // Change app.listen to server.listen
+server.listen(port, () => {
     console.log(`Server running on port ${port}`);
     console.log('Socket.IO is listening...');
 });
