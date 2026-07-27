@@ -21,6 +21,14 @@ import { socket } from '../socket';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
+function getTodayString() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 const getPriorityColor = (priority) => {
   switch (priority) {
     case 'Critical':
@@ -51,12 +59,19 @@ const getStatusColor = (status) => {
 export default function Incidents({ userRole }) {
   const [incidents, setIncidents] = useState([]);
   const [teams, setTeams] = useState([]);
-  const [myTeam, setMyTeam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [selectedTeamByIncident, setSelectedTeamByIncident] = useState({});
   const [actionLoadingId, setActionLoadingId] = useState(null);
+
+  // Working date is set on the Dashboard — this page only reads and displays it.
+  const [workingDate, setWorkingDate] = useState(
+    () => localStorage.getItem('workingDate') || getTodayString()
+  );
+  const [workingEventName, setWorkingEventName] = useState(
+    () => localStorage.getItem('workingEventName') || ''
+  );
 
   const token = localStorage.getItem('token');
   const isHead = userRole === 'head';
@@ -71,10 +86,11 @@ export default function Incidents({ userRole }) {
     }
   }, []);
 
-  const fetchIncidents = useCallback(async () => {
+  const fetchIncidents = useCallback(async (date) => {
     try {
       const res = await axios.get(`${API_BASE_URL}/incident-reports`, {
         headers: { 'x-auth-token': token },
+        params: { date },
       });
       setIncidents(res.data || []);
       setError('');
@@ -96,33 +112,40 @@ export default function Incidents({ userRole }) {
     }
   }, [token, isHead]);
 
-  const fetchMyTeam = useCallback(async () => {
-    if (isHead) return;
-    try {
-      const res = await axios.get(`${API_BASE_URL}/teams/my-team`, {
-        headers: { 'x-auth-token': token },
-      });
-      setMyTeam(res.data);
-    } catch (err) {
-      console.error('Error fetching my-team:', err);
-    }
-  }, [token, isHead]);
-
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchIncidents(), fetchTeams(), fetchMyTeam()]).finally(() => setLoading(false));
-  }, [fetchIncidents, fetchTeams, fetchMyTeam]);
+    Promise.all([fetchIncidents(workingDate), fetchTeams()]).finally(() => setLoading(false));
+  }, [workingDate, fetchIncidents, fetchTeams]);
+
+  // Pick up date changes made on the Dashboard while this page is mounted
+  useEffect(() => {
+    const handler = (e) => {
+      setWorkingDate(e.detail?.date || getTodayString());
+      setWorkingEventName(e.detail?.eventName || '');
+    };
+    window.addEventListener('working-date-changed', handler);
+    return () => window.removeEventListener('working-date-changed', handler);
+  }, []);
+
+  // Upsert instead of map-only: an incident assigned to you may never have
+  // reached your list via the (head-only) creation event, so it needs to be
+  // inserted the first time you hear about it, not just updated.
+  const upsertIncident = useCallback((incident) => {
+    // Only add/update if it belongs to the date currently being viewed
+    if (incident.incidentDate !== workingDate) return;
+    setIncidents((prev) => {
+      const exists = prev.some((i) => i._id === incident._id);
+      if (exists) {
+        return prev.map((i) => (i._id === incident._id ? incident : i));
+      }
+      return [incident, ...prev];
+    });
+  }, [workingDate]);
 
   useEffect(() => {
-    const handleCreated = (incident) => {
-      setIncidents((prev) => [incident, ...prev]);
-    };
-    const handleUpdated = (incident) => {
-      setIncidents((prev) => prev.map((i) => (i._id === incident._id ? incident : i)));
-    };
-    const handleAssigned = (incident) => {
-      setIncidents((prev) => prev.map((i) => (i._id === incident._id ? incident : i)));
-    };
+    const handleCreated = (incident) => upsertIncident(incident);
+    const handleUpdated = (incident) => upsertIncident(incident);
+    const handleAssigned = (incident) => upsertIncident(incident);
 
     socket.on('incident-case-created', handleCreated);
     socket.on('incident-case-updated', handleUpdated);
@@ -133,7 +156,7 @@ export default function Incidents({ userRole }) {
       socket.off('incident-case-updated', handleUpdated);
       socket.off('incident-assigned', handleAssigned);
     };
-  }, []);
+  }, [upsertIncident]);
 
   const handleAssign = async (incidentId) => {
     const teamId = selectedTeamByIncident[incidentId];
@@ -149,7 +172,7 @@ export default function Incidents({ userRole }) {
         { headers: { 'x-auth-token': token } }
       );
       setSuccess('Team assigned successfully!');
-      await fetchIncidents();
+      await fetchIncidents(workingDate);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to assign team.');
@@ -169,7 +192,7 @@ export default function Incidents({ userRole }) {
         { headers: { 'x-auth-token': token } }
       );
       setSuccess(status === 'Resolved' ? 'Incident marked as resolved!' : 'Incident marked as In Progress!');
-      await fetchIncidents();
+      await fetchIncidents(workingDate);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update incident status.');
@@ -181,7 +204,6 @@ export default function Incidents({ userRole }) {
   const renderActions = (incident) => {
     const team = incident.assignedTeam;
 
-    // Head: assign a team while Open
     if (isHead && incident.status === 'Open') {
       return (
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -264,6 +286,13 @@ export default function Incidents({ userRole }) {
     );
   };
 
+  const formattedWorkingDate = new Date(`${workingDate}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
   return (
     <Paper elevation={4} sx={{ p: { xs: 2, md: 4 }, borderRadius: 3 }}>
       <Box sx={{ mb: 3 }}>
@@ -274,6 +303,11 @@ export default function Incidents({ userRole }) {
           {isHead
             ? 'Review incidents generated from alerts and assign response teams.'
             : 'Track incidents assigned to your team and update their progress.'}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+          Showing incidents for: <strong>{formattedWorkingDate}</strong>
+          {workingEventName && <> — {workingEventName}</>}
+          {' '}
         </Typography>
       </Box>
 
@@ -292,7 +326,7 @@ export default function Incidents({ userRole }) {
         <Typography color="text.secondary">Loading incidents...</Typography>
       ) : incidents.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
-          No incidents reported yet.
+          No incidents reported for this date.
         </Typography>
       ) : (
         <TableContainer sx={{ borderRadius: 2, border: '1px solid #e5e7eb', overflowX: 'auto' }}>

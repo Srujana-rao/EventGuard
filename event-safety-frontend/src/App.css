@@ -38,12 +38,18 @@ body {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-sm); /* Default mobile-friendly padding */
     background-color: var(--color-background-light);
-    font-family: 'Roboto', sans-serif; /* Use the imported Google Font */
+    font-family: 'Roboto', sans-serif; 
     color: var(--color-text-dark);
     line-height: 1.6;
     font-size: 16px;
+}
+
+@media (min-width: 768px) {
+    body {
+        padding: var(--spacing-lg); /* Larger padding for laptops/desktops */
+    }
 }
 
 /* Main App Container */
@@ -51,61 +57,93 @@ body {
     background-color: var(--color-surface-card);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-elevation-2);
-    padding: var(--spacing-xl);
-    max-width: 1200px; /* Wider for more content */
+    padding: var(--spacing-md); /* Responsive default padding */
+    max-width: 1200px; 
     width: 100%;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-lg);
 }
 
+@media (min-width: 768px) {
+    .App {
+        padding: var(--spacing-xl);
+    }
+}
+
 /* Header Styling */
 .App-header {
-    background-color: var(--color-primary); /* Solid blue header */
-    padding: var(--spacing-lg) var(--spacing-xl);
+    background-color: var(--color-primary); 
+    padding: var(--spacing-md);
     color: var(--color-text-light);
     border-radius: var(--border-radius-md);
     text-align: center;
     box-shadow: var(--shadow-elevation-1);
-    display: flex; /* Use flexbox for layout */
+    display: flex; 
     flex-direction: column;
     align-items: center;
-    position: relative; /* For user-info positioning */
+    gap: var(--spacing-sm);
+}
+
+@media (min-width: 992px) {
+    .App-header {
+        padding: var(--spacing-lg) var(--spacing-xl);
+    }
 }
 
 .App-header h1 {
     margin-top: 0;
     margin-bottom: var(--spacing-xs);
-    font-size: 2.8em;
+    font-size: 1.85em; /* Scaled down base for mobile */
     font-weight: 700;
     letter-spacing: -0.04em;
+    line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+    .App-header h1 {
+        font-size: 2.8em;
+    }
 }
 
 .App-header p {
-    font-size: 1.1em;
+    font-size: 1em;
     opacity: 0.9;
     font-weight: 300;
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
 }
 
-/* User Info in Header */
+/* User Info in Header - Made Safe For All Viewports */
 .user-info {
-    position: absolute;
-    top: var(--spacing-sm);
-    right: var(--spacing-sm);
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
     font-size: 0.9em;
     font-weight: 400;
     color: var(--color-text-light);
-    background-color: rgba(0, 0, 0, 0.15); /* Slightly transparent background */
+    background-color: rgba(0, 0, 0, 0.15); 
     padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--border-radius-sm);
+    width: 100%; /* Spans across mobile safely */
+    max-width: max-content;
+}
+
+@media (min-width: 992px) {
+    .App-header {
+        position: relative; /* Restored for large layouts */
+    }
+    .user-info {
+        position: absolute;
+        top: var(--spacing-sm);
+        right: var(--spacing-sm);
+        width: auto;
+    }
 }
 
 .logout-button {
-    background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
+    background-color: rgba(255, 255, 255, 0.2); 
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: var(--color-text-light);
     padding: 0.4rem 0.8rem;
@@ -125,11 +163,19 @@ body {
 .main-nav {
     margin-top: var(--spacing-sm);
     display: flex;
-    justify-content: center;
-    gap: var(--spacing-md);
+    flex-direction: column; /* Stack vertically on phones */
+    gap: var(--spacing-xs);
     padding-top: var(--spacing-sm);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     width: 100%;
+}
+
+@media (min-width: 576px) {
+    .main-nav {
+        flex-direction: row; /* Horizontal on tablets and up */
+        justify-content: center;
+        gap: var(--spacing-md);
+    }
 }
 
 .nav-link {
@@ -140,6 +186,8 @@ body {
     padding: 0.5rem var(--spacing-sm);
     border-radius: var(--border-radius-sm);
     transition: background-color 0.2s ease, transform 0.1s ease;
+    text-align: center;
+    display: block;
 }
 
 .nav-link:hover {
@@ -160,10 +208,16 @@ body {
     color: var(--color-primary);
     margin-top: 0;
     margin-bottom: var(--spacing-md);
-    font-size: 1.6em;
+    font-size: 1.4em;
     font-weight: 600;
     border-bottom: 1px solid var(--color-border-light);
     padding-bottom: 0.5em;
+}
+
+@media (min-width: 768px) {
+    .section-card h2 {
+        font-size: 1.6em;
+    }
 }
 
 /* Form and Input Styling */
@@ -183,10 +237,10 @@ form input[type="text"],
 form input[type="email"],
 form input[type="password"],
 form input[type="file"],
-.role-select { /* Apply to role select as well */
+.role-select { 
     padding: 0.75rem var(--spacing-sm);
-    width: 100%;
-    max-width: 450px; /* Slightly wider max-width for inputs */
+    width: 100%; /* Fluid full-width sizing */
+    max-width: 100%;
     border: 1px solid var(--color-border-medium);
     border-radius: var(--border-radius-sm);
     font-size: 1em;
@@ -195,8 +249,18 @@ form input[type="file"],
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+@media (min-width: 576px) {
+    form input[type="text"],
+    form input[type="email"],
+    form input[type="password"],
+    form input[type="file"],
+    .role-select {
+        max-width: 450px; /* Capped size for clean lines on desktop views */
+    }
+}
+
 form input[type="file"] {
-    padding: 0.5rem var(--spacing-sm); /* File input might need less vertical padding */
+    padding: 0.5rem var(--spacing-sm); 
 }
 
 form input[type="text"]:focus,
@@ -218,16 +282,41 @@ form input[type="file"]:focus,
     font-weight: 500;
     transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     margin-top: var(--spacing-sm);
-    display: inline-block; /* Allows width control */
+    display: inline-block; 
     text-align: center;
-    white-space: nowrap; /* Prevent text wrapping */
+    white-space: nowrap; 
+    width: 100%; /* Stretch buttons across screens on mobile phone */
+}
+
+@media (min-width: 576px) {
+    .button-base {
+        width: auto; /* Natural inline block size for wider viewports */
+    }
 }
 
 .button-primary {
-    composes: button-base;
+    /* Merged standard styles from button-base */
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    margin-top: var(--spacing-sm);
+    display: inline-block; 
+    text-align: center;
+    white-space: nowrap; 
+    width: 100%; 
+    
     background-color: var(--color-primary);
     color: var(--color-text-light);
     border: 1px solid var(--color-primary);
+}
+
+@media (min-width: 576px) {
+    .button-primary {
+        width: auto;
+    }
 }
 
 .button-primary:hover {
@@ -237,10 +326,28 @@ form input[type="file"]:focus,
 }
 
 .button-accent {
-    composes: button-base;
+    /* Merged standard styles from button-base */
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    margin-top: var(--spacing-sm);
+    display: inline-block; 
+    text-align: center;
+    white-space: nowrap; 
+    width: 100%;
+
     background-color: var(--color-accent);
     color: var(--color-text-light);
     border: 1px solid var(--color-accent);
+}
+
+@media (min-width: 576px) {
+    .button-accent {
+        width: auto;
+    }
 }
 
 .button-accent:hover {
@@ -258,10 +365,7 @@ button:disabled {
     color: var(--color-text-medium);
 }
 
-/* Apply specific button classes in App.jsx */
-/* Example: <button type="submit" className="button-primary">Add Incident</button> */
-
-/* List Styling (Incidents & Detections) */
+/* List Styling */
 ul {
     list-style: none;
     padding: 0;
@@ -269,7 +373,7 @@ ul {
 }
 
 li {
-    background-color: var(--color-background-light); /* Lighter background for list items */
+    background-color: var(--color-background-light); 
     border: 1px solid var(--color-border-light);
     padding: var(--spacing-sm) var(--spacing-md);
     margin-bottom: var(--spacing-xs);
@@ -282,7 +386,7 @@ li {
 }
 
 li:hover {
-    background-color: #f0f0f0; /* Subtle hover effect */
+    background-color: #f0f0f0; 
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
@@ -292,28 +396,26 @@ li strong {
 }
 
 /* Error and Success Messages */
-.error-message {
-    color: var(--color-danger);
-    background-color: #fce8e6;
-    border: 1px solid var(--color-danger);
+.error-message, .success-message {
     padding: var(--spacing-sm);
     border-radius: var(--border-radius-sm);
     margin-top: var(--spacing-sm);
     text-align: center;
     font-weight: 500;
     font-size: 0.9em;
+    word-wrap: break-word; /* Ensure error code blocks don't break page layouts */
+}
+
+.error-message {
+    color: var(--color-danger);
+    background-color: #fce8e6;
+    border: 1px solid var(--color-danger);
 }
 
 .success-message {
     color: var(--color-accent-dark);
     background-color: #e6ffed;
     border: 1px solid var(--color-accent);
-    padding: var(--spacing-sm);
-    border-radius: var(--border-radius-sm);
-    margin-top: var(--spacing-sm);
-    text-align: center;
-    font-weight: 500;
-    font-size: 0.9em;
 }
 
 /* --- AI Image Analysis Section Specific Styles --- */
@@ -348,7 +450,7 @@ li strong {
     margin-top: var(--spacing-md);
     text-align: left;
     color: var(--color-text-dark);
-    background-color: #e3f2fd; /* Light blue */
+    background-color: #e3f2fd; 
     padding: var(--spacing-md);
     border-radius: var(--border-radius-md);
     border: 1px solid #bbdefb;
@@ -364,9 +466,10 @@ li strong {
 
 /* --- Authentication Specific Styles --- */
 .auth-container {
-    max-width: 450px; /* Slightly narrower */
+    width: 100%;
+    max-width: 450px; 
     margin: var(--spacing-xl) auto;
-    padding: var(--spacing-xl);
+    padding: var(--spacing-md);
     text-align: center;
     background-color: var(--color-surface-card);
     border-radius: var(--border-radius-lg);
@@ -374,35 +477,27 @@ li strong {
     border: 1px solid var(--color-border-light);
 }
 
+@media (min-width: 576px) {
+    .auth-container {
+        padding: var(--spacing-xl);
+    }
+}
+
 .auth-container h2 {
-    font-size: 2em;
+    font-size: 1.8em;
     color: var(--color-primary);
     margin-bottom: var(--spacing-md);
 }
 
+@media (min-width: 576px) {
+    .auth-container h2 {
+        font-size: 2em;
+    }
+}
+
 .auth-container button {
-    composes: button-primary; /* Use shared button style */
     width: 100%;
     max-width: none;
-}
-
-.auth-switch-text {
-    margin-top: var(--spacing-md);
-    color: var(--color-text-medium);
-    font-size: 0.9em;
-}
-
-.auth-link {
-    color: var(--color-primary);
-    cursor: pointer;
-    font-weight: 500;
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-
-.auth-link:hover {
-    color: var(--color-primary-dark);
-    text-decoration: underline;
 }
 
 /* Head Dashboard Styles */
@@ -424,12 +519,12 @@ li strong {
     border: 1px solid var(--color-border-light);
     padding: 1rem 1.25rem;
     margin-bottom: 0.75rem;
-    border-radius: var(--border-radius-base);
+    border-radius: var(--border-radius-md);
     box-shadow: var(--shadow-elevation-1);
     font-size: 0.9em;
 }
 
-@media (min-width: 768px) { /* Adjust for larger screens */
+@media (min-width: 768px) { 
     .pending-user-item {
         flex-direction: row;
         justify-content: space-between;
@@ -440,8 +535,8 @@ li strong {
     form input[type="password"],
     form input[type="file"],
     .role-select {
-        width: auto; /* Auto width on larger screens */
-        flex-grow: 1; /* Allow inputs to grow */
+        width: auto; 
+        flex-grow: 1; 
     }
 }
 
@@ -459,16 +554,18 @@ li strong {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
-    align-items: flex-end;
+    align-items: flex-start;
+    width: 100%;
 }
 
 @media (min-width: 768px) {
     .user-actions {
         flex-direction: row;
         align-items: center;
+        width: auto;
     }
     .user-actions label {
-        margin-bottom: 0; /* Align label horizontally */
+        margin-bottom: 0; 
         margin-right: var(--spacing-xs);
     }
 }
@@ -481,50 +578,25 @@ li strong {
     background-color: var(--color-background-light);
     color: var(--color-text-dark);
     cursor: pointer;
+    width: 100%;
 }
 
-.user-actions .button-accent { /* Apply the accent button style for approve */
-    composes: button-accent;
+@media (min-width: 768px) {
+    .role-select {
+        width: auto;
+    }
+}
+
+.user-actions .button-accent { 
     padding: 0.6rem 1rem;
     font-size: 0.85em;
     margin-top: 0;
+    width: 100%;
 }
 
-/* Small screen adjustments */
-@media (max-width: 600px) {
-    body {
-        padding: 10px;
-    }
-    .App {
-        padding: var(--spacing-md);
-        gap: var(--spacing-md);
-    }
-    .App-header h1 {
-        font-size: 2.2em;
-    }
-    .section-card {
-        padding: var(--spacing-md);
-    }
-    .App-header {
-        padding: var(--spacing-md) var(--spacing-md);
-    }
-    .user-info {
-        position: static; /* Stack user info on small screens */
-        margin-top: var(--spacing-sm);
-        width: 100%;
-        justify-content: center;
-        background-color: transparent;
-        padding: 0;
-        border-radius: 0;
-    }
-    .main-nav {
-        flex-direction: column;
-        gap: var(--spacing-xs);
-        align-items: center;
-    }
-    .nav-link {
-        width: 90%;
-        text-align: center;
+@media (min-width: 768px) {
+    .user-actions .button-accent {
+        width: auto;
     }
 }
 
@@ -538,13 +610,18 @@ li strong {
 }
 
 .send-alert-form input[type="text"],
-.send-alert-form .role-select { /* Also style select box */
-    max-width: none; /* Allow it to take full width of section */
+.send-alert-form .role-select { 
+    max-width: none; 
 }
 
 .send-alert-form button {
-    width: auto; /* Allow button to size to content */
-    max-width: none;
+    width: 100%;
+}
+
+@media (min-width: 576px) {
+    .send-alert-form button {
+        width: auto;
+    }
 }
 
 /* --- Alert Media Display --- */
@@ -567,55 +644,26 @@ li strong {
     border-radius: var(--border-radius-sm);
 }
 
-.alert-media p {
-    margin-top: var(--spacing-xs);
-    font-size: 0.9em;
-}
-.alert-media a {
-    color: var(--color-primary);
-    text-decoration: none;
-    font-weight: 500;
-}
-.alert-media a:hover {
-    text-decoration: underline;
-}
-
-/* New style for alert target badge */
-.alert-target-badge {
-    display: inline-block;
-    background-color: var(--color-primary); /* Use primary color */
-    color: var(--color-text-light); /* White text */
-    padding: 2px 8px;
-    border-radius: var(--border-radius-sm);
-    font-size: 0.8em;
-    font-weight: 600;
-    margin-left: 10px;
-    vertical-align: middle;
-}
-
-/* --- Alert Priority Badges --- */
-.alert-priority-badge {
+/* --- Alert & Incident Badges --- */
+.alert-target-badge, .alert-priority-badge {
     display: inline-block;
     padding: 2px 8px;
     border-radius: var(--border-radius-sm);
     font-size: 0.8em;
     font-weight: 600;
-    margin-left: 10px;
+    margin-left: 5px;
+    margin-top: 4px;
     vertical-align: middle;
     color: var(--color-text-light);
 }
 
-.alert-priority-urgent {
-    background-color: var(--color-danger);
+.alert-target-badge {
+    background-color: var(--color-primary);
 }
 
-.alert-priority-important {
-    background-color: var(--color-warning);
-}
-
-.alert-priority-info {
-    background-color: var(--color-info);
-}
+.alert-priority-urgent { background-color: var(--color-danger); }
+.alert-priority-important { background-color: var(--color-warning); }
+.alert-priority-info { background-color: var(--color-info); }
 
 /* --- Incident Media Display --- */
 .incident-image {
@@ -635,30 +683,37 @@ li strong {
     border-radius: var(--border-radius-sm);
 }
 
-.incident-image p {
-    margin-top: var(--spacing-xs);
-    font-size: 0.85em;
+/* Incident list item layout modernized for mobile layout flexibility */
+.incident-list-item { 
+    display: flex;
+    flex-direction: column;
+    position: relative; 
+    padding: var(--spacing-sm);
+    gap: var(--spacing-sm);
 }
-.incident-image a {
-    color: var(--color-primary);
-    text-decoration: none;
-    font-weight: 500;
-}
-.incident-image a:hover {
-    text-decoration: underline;
-}
-/* Style for incident list item's delete button */
-.incident-list-item { /* New class added to LI in App.jsx */
-    position: relative; /* For delete button positioning if needed, or other layout */
-    padding-right: 120px; /* Make space for button, adjust if button larger */
+
+@media (min-width: 576px) {
+    .incident-list-item {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding-right: 140px; /* Safe gutter window only on wide screens */
+    }
 }
 
 .delete-incident-button {
-    position: absolute;
-    right: 15px; /* Adjust as needed */
-    top: 50%;
-    transform: translateY(-50%);
+    width: 100%;
+    margin-top: 0;
     padding: 0.5rem 1rem;
     font-size: 0.85em;
-    margin-top: 0; /* Override default button margin-top */
+}
+
+@media (min-width: 576px) {
+    .delete-incident-button {
+        position: absolute;
+        right: 15px; 
+        top: 50%;
+        transform: translateY(-50%);
+        width: auto;
+    }
 }

@@ -10,6 +10,8 @@ const SafetyIncidentSchema = new mongoose.Schema({
   reportedByRole: { type: String, default: '' },
   assignedTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
   sourceAlertId: { type: mongoose.Schema.Types.ObjectId, ref: 'Alert', default: null },
+  incidentDate: { type: String, required: true, index: true }, // 'YYYY-MM-DD' — the working date this incident belongs to
+  eventName: { type: String, default: '' },
   resolvedAt: { type: Date, default: null },
 }, { timestamps: true });
 

@@ -84,11 +84,19 @@ const alertSchema = new mongoose.Schema({
 const Alert = mongoose.model('Alert', alertSchema);
 
 // --- Incident case helpers ---
-async function generateIncidentId() {
+function getTodayString() {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+async function generateIncidentId(dateStr) {
     const counter = await Counter.findOneAndUpdate(
-        { name: 'incident' },
+        { name: `incident-${dateStr}` },
         { $inc: { seq: 1 } },
-        { new: true, upsert: true }
+        { new: true, upsert: true, setDefaultsOnInsert: true }
     );
     return `INC-${counter.seq}`;
 }
@@ -113,6 +121,23 @@ const connectedUsersByRole = {
 };
 const socketToUserId = new Map();
 const userIdToSocketId = new Map();
+
+function emitToRole(role, event, payload) {
+    const socketIds = connectedUsersByRole[role];
+    if (!socketIds) return;
+    for (const socketId of socketIds) {
+        io.to(socketId).emit(event, payload);
+    }
+}
+
+function emitToUserIds(userIds, event, payload) {
+    userIds.forEach((userId) => {
+        const socketId = userIdToSocketId.get(String(userId));
+        if (socketId) {
+            io.to(socketId).emit(event, payload);
+        }
+    });
+}
 
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
@@ -162,7 +187,7 @@ io.on('connection', (socket) => {
             return;
         }
 
-        const { targetRole, message, mediaUrl, mediaType, priority, locationTag } = alertData;
+        const { targetRole, message, mediaUrl, mediaType, priority, locationTag, workingDate, eventName } = alertData;
 
         const fullAlert = {
             message,
@@ -198,9 +223,12 @@ io.on('connection', (socket) => {
                 }
             }
 
-            // Auto-create an Incident case for this alert
+            // Auto-create an Incident case for this alert, stamped with the
+            // sender's active working date (falls back to server-side "today"
+            // if the client didn't send one for any reason).
             try {
-                const incidentId = await generateIncidentId();
+                const incidentDate = workingDate || getTodayString();
+                const incidentId = await generateIncidentId(incidentDate);
                 const newIncidentCase = new SafetyIncident({
                     incidentId,
                     type: fullAlert.message || 'Incident',
@@ -210,10 +238,13 @@ io.on('connection', (socket) => {
                     reportedBy: fullAlert.sender,
                     reportedByRole: fullAlert.senderRole,
                     sourceAlertId: newAlert._id,
+                    incidentDate,
+                    eventName: eventName || '',
                 });
                 await newIncidentCase.save();
-                io.emit('incident-case-created', newIncidentCase);
-                console.log('Incident case auto-created:', newIncidentCase.incidentId);
+
+                emitToRole('head', 'incident-case-created', newIncidentCase);
+                console.log('Incident case auto-created:', newIncidentCase.incidentId, 'for date', incidentDate);
             } catch (incidentErr) {
                 console.error('Error auto-creating incident case:', incidentErr.message);
             }
@@ -484,7 +515,12 @@ app.delete('/api/teams/:id', auth, async (req, res) => {
 // --- Incident Management (SafetyIncident) ---
 app.get('/api/incident-reports', auth, async (req, res) => {
     try {
-        const incidents = await SafetyIncident.find()
+        const filter = {};
+        if (req.query.date) {
+            filter.incidentDate = req.query.date;
+        }
+
+        const incidents = await SafetyIncident.find(filter)
             .sort({ createdAt: -1 })
             .populate({
                 path: 'assignedTeam',
@@ -503,9 +539,11 @@ app.get('/api/incident-reports', auth, async (req, res) => {
 
 app.get('/api/incident-reports/summary', auth, async (req, res) => {
     try {
+        // Pending count is intentionally all-time (not date-scoped) — it
+        // reflects total outstanding work across every working date.
         if (req.user.role === 'head') {
-            const openCount = await SafetyIncident.countDocuments({ status: 'Open' });
-            return res.status(200).json({ pending: openCount });
+            const pending = await SafetyIncident.countDocuments({ status: { $ne: 'Resolved' } });
+            return res.status(200).json({ pending });
         }
 
         const myTeam = await Team.findOne({ members: req.user.id });
@@ -515,7 +553,7 @@ app.get('/api/incident-reports/summary', auth, async (req, res) => {
 
         const pending = await SafetyIncident.countDocuments({
             assignedTeam: myTeam._id,
-            status: { $in: ['Assigned', 'In Progress'] },
+            status: { $ne: 'Resolved' },
         });
         res.status(200).json({ pending });
     } catch (error) {
@@ -562,14 +600,9 @@ app.patch('/api/incident-reports/:id/assign', auth, async (req, res) => {
         (team.members || []).forEach((m) => notifyIds.add(String(m._id)));
         if (team.teamHead) notifyIds.add(String(team.teamHead._id));
 
-        notifyIds.forEach((memberId) => {
-            const socketId = userIdToSocketId.get(memberId);
-            if (socketId) {
-                io.to(socketId).emit('incident-assigned', populatedIncident);
-            }
-        });
-
-        io.emit('incident-case-updated', populatedIncident);
+        emitToUserIds(notifyIds, 'incident-assigned', populatedIncident);
+        emitToUserIds(notifyIds, 'incident-case-updated', populatedIncident);
+        emitToRole('head', 'incident-case-updated', populatedIncident);
 
         res.status(200).json(populatedIncident);
     } catch (error) {
@@ -633,7 +666,12 @@ app.patch('/api/incident-reports/:id/status', auth, async (req, res) => {
 
         await incidentCase.save();
 
-        io.emit('incident-case-updated', incidentCase);
+        const notifyIds = new Set();
+        memberIds.forEach((id) => notifyIds.add(id));
+        if (team.teamHead) notifyIds.add(String(team.teamHead._id));
+
+        emitToUserIds(notifyIds, 'incident-case-updated', incidentCase);
+        emitToRole('head', 'incident-case-updated', incidentCase);
 
         res.status(200).json(incidentCase);
     } catch (error) {

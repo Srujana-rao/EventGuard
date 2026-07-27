@@ -22,6 +22,14 @@ import Incidents from './components/Incidents';
 // Socket.IO client instance
 import { socket } from './socket';
 
+function getTodayString() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
   const [realtimeAlerts, setRealtimeAlerts] = useState([]);
   const [meetingNotificationCount, setMeetingNotificationCount] = useState(0);
@@ -35,6 +43,31 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
   const [alertTargetRole, setAlertTargetRole] = useState('all'); // 'all', 'head', 'room', 'ground'
   const [alertPriority, setAlertPriority] = useState('info'); // 'urgent', 'important', 'info'
   const [alertLocationTag, setAlertLocationTag] = useState('');
+
+  // Working date / event name — the active incident-tracking date for this session.
+  // Persisted to localStorage so it survives navigation to other pages (e.g. Incidents).
+  const [workingDate, setWorkingDateState] = useState(
+    () => localStorage.getItem('workingDate') || getTodayString()
+  );
+  const [workingEventName, setWorkingEventNameState] = useState(
+    () => localStorage.getItem('workingEventName') || ''
+  );
+
+  const setWorkingDate = (date) => {
+    setWorkingDateState(date);
+    localStorage.setItem('workingDate', date);
+    window.dispatchEvent(
+      new CustomEvent('working-date-changed', { detail: { date, eventName: workingEventName } })
+    );
+  };
+
+  const setWorkingEventName = (name) => {
+    setWorkingEventNameState(name);
+    localStorage.setItem('workingEventName', name);
+    window.dispatchEvent(
+      new CustomEvent('working-date-changed', { detail: { date: workingDate, eventName: name } })
+    );
+  };
 
   // React Refs for File Inputs
   const alertMediaInputRef = useRef(null);
@@ -168,6 +201,8 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
       targetRole: alertTargetRole === 'all' ? null : alertTargetRole,
       priority: alertPriority,
       locationTag: alertLocationTag,
+      workingDate,
+      eventName: workingEventName,
     };
 
     if (socket.connected) {
@@ -247,6 +282,10 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
       alertMediaInputRef={alertMediaInputRef}
       approvalsPending={approvalsPending}
       meetingNotificationCount={meetingNotificationCount}
+      workingDate={workingDate}
+      setWorkingDate={setWorkingDate}
+      workingEventName={workingEventName}
+      setWorkingEventName={setWorkingEventName}
     />
   );
 }
@@ -367,7 +406,6 @@ function App() {
         <Route path="/social-success" element={<SocialSuccess setAuth={handleSetAuth} />} />
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        {/* Social sign-in callback removed */}
         <Route
           path="/head-dashboard"
           element={
@@ -434,17 +472,29 @@ function App() {
           }
         />
         <Route
-  path="/teams"
-  element={
-    isAuthenticated ? (
-      <DashboardShell title="Teams" userRole={userRole} username={username}>
-        <Teams userRole={userRole} />
-      </DashboardShell>
-    ) : (
-      <Navigate to="/login" replace />
-    )
-  }
-/>
+          path="/teams"
+          element={
+            isAuthenticated ? (
+              <DashboardShell title="Teams" userRole={userRole} username={username}>
+                <Teams userRole={userRole} />
+              </DashboardShell>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/incidents"
+          element={
+            isAuthenticated ? (
+              <DashboardShell title="Incidents" userRole={userRole} username={username}>
+                <Incidents userRole={userRole} />
+              </DashboardShell>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
         <Route
           path="/*"
           element={
@@ -455,18 +505,6 @@ function App() {
             )
           }
         />
-        <Route
-  path="/incidents"
-  element={
-    isAuthenticated ? (
-      <DashboardShell title="Incidents" userRole={userRole} username={username}>
-        <Incidents userRole={userRole} />
-      </DashboardShell>
-    ) : (
-      <Navigate to="/login" replace />
-    )
-  }
-/>
       </Routes>
     </Router>
   );

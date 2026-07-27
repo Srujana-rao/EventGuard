@@ -16,6 +16,7 @@ import SendIcon from '@mui/icons-material/Send';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import SecurityIcon from '@mui/icons-material/Security';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import SidebarMenu from './SidebarMenu';
 
 const topBarBg = '#ffffff';
@@ -386,6 +387,10 @@ export default function Dashboard({
   alertMediaInputRef,
   approvalsPending = 0,
   meetingNotificationCount = 0,
+  workingDate,
+  setWorkingDate,
+  workingEventName,
+  setWorkingEventName,
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [myTeam, setMyTeam] = useState(null);
@@ -423,27 +428,36 @@ export default function Dashboard({
   }, []);
 
   useEffect(() => {
-  let isMounted = true;
-  const token = localStorage.getItem('token');
-  if (!token) return undefined;
+    let isMounted = true;
+    const token = localStorage.getItem('token');
+    if (!token) return undefined;
 
-  const refreshIncidentSummary = () => {
-    axios
-      .get(`${API_BASE_URL}/incident-reports/summary`, { headers: { 'x-auth-token': token } })
-      .then((res) => {
-        if (isMounted) setIncidentsPending(res.data?.pending || 0);
+    const refreshIncidentSummary = () => {
+      axios
+        .get(`${API_BASE_URL}/incident-reports/summary`, { headers: { 'x-auth-token': token } })
+        .then((res) => {
+          if (isMounted) setIncidentsPending(res.data?.pending || 0);
+        })
+        .catch(() => {});
+    };
+
+    refreshIncidentSummary();
+
+    window.addEventListener('focus', refreshIncidentSummary);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('focus', refreshIncidentSummary);
+    };
+  }, []);
+
+  const formattedWorkingDate = workingDate
+    ? new Date(`${workingDate}T00:00:00`).toLocaleDateString(undefined, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
       })
-      .catch(() => {});
-  };
-
-  refreshIncidentSummary();
-
-  window.addEventListener('focus', refreshIncidentSummary);
-  return () => {
-    isMounted = false;
-    window.removeEventListener('focus', refreshIncidentSummary);
-  };
-}, []);
+    : '';
 
   return (
     <Box
@@ -594,6 +608,43 @@ export default function Dashboard({
           }}
           role="main"
         >
+          {/* Working Date / Event Name selector — sets the active date for incidents */}
+          <Paper
+            elevation={2}
+            sx={{
+              p: { xs: 2, md: 3 },
+              borderRadius: 3,
+              mb: 3,
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 2,
+              alignItems: 'center',
+            }}
+          >
+            <CalendarMonthIcon sx={{ color: '#667eea' }} />
+            <TextField
+              label="Working Date"
+              type="date"
+              size="small"
+              value={workingDate}
+              onChange={(e) => setWorkingDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{ minWidth: 180 }}
+            />
+            <TextField
+              label="Event Name (optional)"
+              size="small"
+              value={workingEventName}
+              onChange={(e) => setWorkingEventName(e.target.value)}
+              placeholder="e.g. Summer Fest 2026"
+              sx={{ minWidth: 220 }}
+            />
+            <Typography variant="body2" sx={{ color: '#666', ml: { md: 'auto' } }}>
+              Working on: <strong>{formattedWorkingDate}</strong>
+              {workingEventName && <> — {workingEventName}</>}
+            </Typography>
+          </Paper>
+
           <AlertsTab
             alertMessage={alertMessage}
             setAlertMessage={setAlertMessage}
