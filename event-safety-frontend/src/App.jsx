@@ -30,6 +30,8 @@ function getTodayString() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+const API_BASE_URL = 'http://localhost:5000/api';
+
 function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
   const [realtimeAlerts, setRealtimeAlerts] = useState([]);
   const [meetingNotificationCount, setMeetingNotificationCount] = useState(0);
@@ -44,40 +46,92 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
   const [alertPriority, setAlertPriority] = useState('info'); // 'urgent', 'important', 'info'
   const [alertLocationTag, setAlertLocationTag] = useState('');
 
-  // Working date / event name — the active incident-tracking date for this session.
-  // Persisted to localStorage so it survives navigation to other pages (e.g. Incidents).
-  const [workingDate, setWorkingDateState] = useState(
-    () => localStorage.getItem('workingDate') || getTodayString()
-  );
-  const [workingEventName, setWorkingEventNameState] = useState(
-    () => localStorage.getItem('workingEventName') || ''
-  );
-
-  const setWorkingDate = (date) => {
-    setWorkingDateState(date);
-    localStorage.setItem('workingDate', date);
-    window.dispatchEvent(
-      new CustomEvent('working-date-changed', { detail: { date, eventName: workingEventName } })
-    );
-  };
-
-  const setWorkingEventName = (name) => {
-    setWorkingEventNameState(name);
-    localStorage.setItem('workingEventName', name);
-    window.dispatchEvent(
-      new CustomEvent('working-date-changed', { detail: { date: workingDate, eventName: name } })
-    );
-  };
+  // Working date / event name — the server-shared active date for the current
+  // real calendar day. Only Head can change it (via saveWorkingDay below).
+  const [workingDate, setWorkingDate] = useState(getTodayString());
+  const [workingEventName, setWorkingEventName] = useState('');
+  const [workingDayLoaded, setWorkingDayLoaded] = useState(false);
 
   // React Refs for File Inputs
   const alertMediaInputRef = useRef(null);
-
-  const API_BASE_URL = 'http://localhost:5000/api';
 
   const handleLogout = () => {
     handleSetAuth(false);
     socket.disconnect();
     window.location.href = '/';
+  };
+
+  // Fetch the current working day on mount, and keep it in sync via socket
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    const token = localStorage.getItem('token');
+    if (!token) return undefined;
+
+    let isMounted = true;
+    axios
+      .get(`${API_BASE_URL}/working-day/current`, { headers: { 'x-auth-token': token } })
+      .then((res) => {
+        if (!isMounted) return;
+        if (res.data) {
+          setWorkingDate(res.data.workingDate);
+          setWorkingEventName(res.data.eventName || '');
+        }
+        setWorkingDayLoaded(true);
+      })
+      .catch(() => {
+        if (isMounted) setWorkingDayLoaded(true);
+      });
+
+    const handleWorkingDayChanged = (doc) => {
+      setWorkingDate(doc.workingDate);
+      setWorkingEventName(doc.eventName || '');
+    };
+    socket.on('working-day-changed', handleWorkingDayChanged);
+
+    return () => {
+      isMounted = false;
+      socket.off('working-day-changed', handleWorkingDayChanged);
+    };
+  }, [isAuthenticated]);
+
+  // Fetch persisted alerts for the active working date — runs on mount and
+  // whenever the working date changes, so the feed is always in sync no
+  // matter which page the user was on before, and resets automatically the
+  // moment the working date rolls over to a new day.
+  useEffect(() => {
+    if (!isAuthenticated || !workingDayLoaded || !workingDate) return undefined;
+    const token = localStorage.getItem('token');
+    if (!token) return undefined;
+
+    let isMounted = true;
+    axios
+      .get(`${API_BASE_URL}/alerts`, {
+        headers: { 'x-auth-token': token },
+        params: { date: workingDate },
+      })
+      .then((res) => {
+        if (isMounted) setRealtimeAlerts(res.data || []);
+      })
+      .catch(() => {
+        if (isMounted) setRealtimeAlerts([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, workingDate, workingDayLoaded]);
+
+  // Head-only: persist a new working date/event name to the backend
+  const saveWorkingDay = async (date, eventName) => {
+    const token = localStorage.getItem('token');
+    const res = await axios.post(
+      `${API_BASE_URL}/working-day`,
+      { workingDate: date, eventName },
+      { headers: { 'x-auth-token': token } }
+    );
+    setWorkingDate(res.data.workingDate);
+    setWorkingEventName(res.data.eventName || '');
+    return res.data;
   };
 
   /// Socket.IO event listeners for the main dashboard (connection is managed in App)
@@ -191,6 +245,10 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
       }
     }
 
+    // NOTE: workingDate/eventName are sent as a convenience hint only — the
+    // backend now always looks up the authoritative working date itself and
+    // does not trust these values, so client-side staleness can't cause
+    // alerts/incidents to be misfiled anymore.
     const alertData = {
       message: alertMessage.trim(),
       sender: username,
@@ -283,9 +341,9 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
       approvalsPending={approvalsPending}
       meetingNotificationCount={meetingNotificationCount}
       workingDate={workingDate}
-      setWorkingDate={setWorkingDate}
       workingEventName={workingEventName}
-      setWorkingEventName={setWorkingEventName}
+      workingDayLoaded={workingDayLoaded}
+      saveWorkingDay={saveWorkingDay}
     />
   );
 }

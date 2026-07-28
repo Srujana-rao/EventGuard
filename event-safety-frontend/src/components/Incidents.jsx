@@ -16,7 +16,9 @@ import {
   MenuItem,
   FormControl,
   Alert,
+  TextField,
 } from '@mui/material';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import { socket } from '../socket';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -65,13 +67,12 @@ export default function Incidents({ userRole }) {
   const [selectedTeamByIncident, setSelectedTeamByIncident] = useState({});
   const [actionLoadingId, setActionLoadingId] = useState(null);
 
-  // Working date is set on the Dashboard — this page only reads and displays it.
-  const [workingDate, setWorkingDate] = useState(
-    () => localStorage.getItem('workingDate') || getTodayString()
-  );
-  const [workingEventName, setWorkingEventName] = useState(
-    () => localStorage.getItem('workingEventName') || ''
-  );
+  // Independent "browse date" — defaults to today, but the user can pick any
+  // date to look at past (or future) incidents without affecting the global
+  // working date that Head controls on the Dashboard.
+  const [viewDate, setViewDate] = useState(getTodayString());
+  const [viewEventName, setViewEventName] = useState('');
+  const [hasManualOverride, setHasManualOverride] = useState(false);
 
   const token = localStorage.getItem('token');
   const isHead = userRole === 'head';
@@ -112,27 +113,74 @@ export default function Incidents({ userRole }) {
     }
   }, [token, isHead]);
 
+  const fetchEventNameForDate = useCallback(async (date) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/working-day/by-date`, {
+        headers: { 'x-auth-token': token },
+        params: { date },
+      });
+      setViewEventName(res.data?.eventName || '');
+    } catch {
+      setViewEventName('');
+    }
+  }, [token]);
+
+  // On mount, follow whatever the current global working date is (until the
+  // user manually changes the date picker on this page)
+  useEffect(() => {
+    if (hasManualOverride) return;
+    axios
+      .get(`${API_BASE_URL}/working-day/current`, { headers: { 'x-auth-token': token } })
+      .then((res) => {
+        if (res.data?.workingDate) {
+          setViewDate(res.data.workingDate);
+        }
+      })
+      .catch(() => {});
+  }, [token, hasManualOverride]);
+
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchIncidents(workingDate), fetchTeams()]).finally(() => setLoading(false));
-  }, [workingDate, fetchIncidents, fetchTeams]);
+    Promise.all([fetchIncidents(viewDate), fetchTeams(), fetchEventNameForDate(viewDate)]).finally(() =>
+      setLoading(false)
+    );
+  }, [viewDate, fetchIncidents, fetchTeams, fetchEventNameForDate]);
 
-  // Pick up date changes made on the Dashboard while this page is mounted
+  // Keep following the global working date in real time, unless the user has
+  // manually picked a different date to browse
   useEffect(() => {
-    const handler = (e) => {
-      setWorkingDate(e.detail?.date || getTodayString());
-      setWorkingEventName(e.detail?.eventName || '');
+    const handleWorkingDayChanged = (doc) => {
+      if (!hasManualOverride && doc?.workingDate) {
+        setViewDate(doc.workingDate);
+      }
     };
-    window.addEventListener('working-date-changed', handler);
-    return () => window.removeEventListener('working-date-changed', handler);
-  }, []);
+    socket.on('working-day-changed', handleWorkingDayChanged);
+    return () => socket.off('working-day-changed', handleWorkingDayChanged);
+  }, [hasManualOverride]);
+
+  const handleViewDateChange = (newDate) => {
+    setHasManualOverride(true);
+    setViewDate(newDate);
+  };
+
+  const handleResetToToday = async () => {
+    setHasManualOverride(false);
+    try {
+      const res = await axios.get(`${API_BASE_URL}/working-day/current`, {
+        headers: { 'x-auth-token': token },
+      });
+      setViewDate(res.data?.workingDate || getTodayString());
+    } catch {
+      setViewDate(getTodayString());
+    }
+  };
 
   // Upsert instead of map-only: an incident assigned to you may never have
   // reached your list via the (head-only) creation event, so it needs to be
   // inserted the first time you hear about it, not just updated.
   const upsertIncident = useCallback((incident) => {
-    // Only add/update if it belongs to the date currently being viewed
-    if (incident.incidentDate !== workingDate) return;
+    // Only reflect it live if it belongs to the date currently being viewed
+    if (incident.incidentDate !== viewDate) return;
     setIncidents((prev) => {
       const exists = prev.some((i) => i._id === incident._id);
       if (exists) {
@@ -140,7 +188,7 @@ export default function Incidents({ userRole }) {
       }
       return [incident, ...prev];
     });
-  }, [workingDate]);
+  }, [viewDate]);
 
   useEffect(() => {
     const handleCreated = (incident) => upsertIncident(incident);
@@ -172,7 +220,7 @@ export default function Incidents({ userRole }) {
         { headers: { 'x-auth-token': token } }
       );
       setSuccess('Team assigned successfully!');
-      await fetchIncidents(workingDate);
+      await fetchIncidents(viewDate);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to assign team.');
@@ -192,7 +240,7 @@ export default function Incidents({ userRole }) {
         { headers: { 'x-auth-token': token } }
       );
       setSuccess(status === 'Resolved' ? 'Incident marked as resolved!' : 'Incident marked as In Progress!');
-      await fetchIncidents(workingDate);
+      await fetchIncidents(viewDate);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update incident status.');
@@ -286,7 +334,7 @@ export default function Incidents({ userRole }) {
     );
   };
 
-  const formattedWorkingDate = new Date(`${workingDate}T00:00:00`).toLocaleDateString(undefined, {
+  const formattedViewDate = new Date(`${viewDate}T00:00:00`).toLocaleDateString(undefined, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -295,21 +343,41 @@ export default function Incidents({ userRole }) {
 
   return (
     <Paper elevation={4} sx={{ p: { xs: 2, md: 4 }, borderRadius: 3 }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight={700} gutterBottom>
-          Incident Management
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {isHead
-            ? 'Review incidents generated from alerts and assign response teams.'
-            : 'Track incidents assigned to your team and update their progress.'}
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-          Showing incidents for: <strong>{formattedWorkingDate}</strong>
-          {workingEventName && <> — {workingEventName}</>}
-          {' '}
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} gutterBottom>
+            Incident Management
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {isHead
+              ? 'Review incidents generated from alerts and assign response teams.'
+              : 'Track incidents assigned to your team and update their progress.'}
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+          <CalendarMonthIcon sx={{ color: '#667eea' }} />
+          <TextField
+            label="View Date"
+            type="date"
+            size="small"
+            value={viewDate}
+            onChange={(e) => handleViewDateChange(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 170 }}
+          />
+          {hasManualOverride && (
+            <Button size="small" onClick={handleResetToToday} sx={{ textTransform: 'none' }}>
+              Back to Current
+            </Button>
+          )}
+        </Box>
       </Box>
+
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+        Showing incidents for: <strong>{formattedViewDate}</strong>
+        {viewEventName && <> — {viewEventName}</>}
+      </Typography>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>

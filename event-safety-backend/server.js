@@ -11,6 +11,7 @@ const Meeting = require('./models/Meeting');
 const Team = require('./models/Team');
 const Counter = require('./models/Counter');
 const SafetyIncident = require('./models/SafetyIncident');
+const WorkingDay = require('./models/WorkingDay');
 const jwt = require('jsonwebtoken');
 const auth = require('./routes/auth').auth;
 
@@ -79,7 +80,9 @@ const alertSchema = new mongoose.Schema({
     senderRole: { type: String, required: true },
     targetRole: { type: String, enum: ['all', 'head', 'room', 'ground', null], default: null },
     priority: { type: String, enum: ['urgent', 'important', 'info'], default: 'info' },
-    locationTag: { type: String, trim: true, default: '' }
+    locationTag: { type: String, trim: true, default: '' },
+    workingDate: { type: String, default: null, index: true }, // NEW — which working date this alert belongs to
+    timestamp: { type: Date, default: Date.now }, // NEW — explicit field (was previously silently dropped by Mongoose)
 }, { timestamps: true });
 const Alert = mongoose.model('Alert', alertSchema);
 
@@ -187,48 +190,58 @@ io.on('connection', (socket) => {
             return;
         }
 
-        const { targetRole, message, mediaUrl, mediaType, priority, locationTag, workingDate, eventName } = alertData;
-
-        const fullAlert = {
-            message,
-            sender: alertData.sender || socket.user.username,
-            senderId: alertData.senderId || socket.user.id,
-            senderRole: alertData.senderRole || socket.user.role,
-            timestamp: new Date().toISOString(),
-            mediaUrl,
-            mediaType,
-            targetRole,
-            priority,
-            locationTag
-        };
-
-        console.log(`Alert from ${fullAlert.sender} (${fullAlert.senderRole}) (Target: ${targetRole || 'All'}) (Priority: ${priority || 'info'}) (Location: ${locationTag || 'N/A'}) :`, fullAlert.message);
+        const { targetRole, message, mediaUrl, mediaType, priority, locationTag } = alertData;
 
         try {
+            // Look up the authoritative working day directly from the server —
+            // never trust the client's cached value for this. This is what
+            // guarantees alerts/incidents are always filed under the correct
+            // date and that incident numbering resets properly on a new day.
+            const today = getTodayString();
+            const workingDayDoc = await WorkingDay.findOne({ realDate: today });
+            const activeWorkingDate = workingDayDoc?.workingDate || today;
+            const activeEventName = workingDayDoc?.eventName || '';
+
+            const fullAlert = {
+                message,
+                sender: alertData.sender || socket.user.username,
+                senderId: alertData.senderId || socket.user.id,
+                senderRole: alertData.senderRole || socket.user.role,
+                timestamp: new Date(),
+                mediaUrl,
+                mediaType,
+                targetRole,
+                priority,
+                locationTag,
+                workingDate: activeWorkingDate,
+            };
+
+            console.log(`Alert from ${fullAlert.sender} (${fullAlert.senderRole}) (Target: ${targetRole || 'All'}) (Priority: ${priority || 'info'}) (Location: ${locationTag || 'N/A'}) (Working Date: ${activeWorkingDate}):`, fullAlert.message);
+
             const newAlert = new Alert(fullAlert);
             await newAlert.save();
             console.log('Alert saved to DB:', newAlert._id);
 
+            const emitPayload = { ...fullAlert, _id: newAlert._id, timestamp: fullAlert.timestamp.toISOString() };
+
             if (targetRole && connectedUsersByRole[targetRole]) {
                 console.log(`Emitting alert to ${targetRole} members.`);
                 for (const targetSocketId of connectedUsersByRole[targetRole]) {
-                    io.to(targetSocketId).emit('receive-alert', { ...fullAlert, _id: newAlert._id });
+                    io.to(targetSocketId).emit('receive-alert', emitPayload);
                 }
             } else {
                 console.log('Emitting alert to all authenticated members (default).');
                 for (const roleSet of Object.values(connectedUsersByRole)) {
                     for (const targetSocketId of roleSet) {
-                        io.to(targetSocketId).emit('receive-alert', { ...fullAlert, _id: newAlert._id });
+                        io.to(targetSocketId).emit('receive-alert', emitPayload);
                     }
                 }
             }
 
-            // Auto-create an Incident case for this alert, stamped with the
-            // sender's active working date (falls back to server-side "today"
-            // if the client didn't send one for any reason).
+            // Auto-create an Incident case, stamped with the server-authoritative
+            // working date (never derived from client-supplied data).
             try {
-                const incidentDate = workingDate || getTodayString();
-                const incidentId = await generateIncidentId(incidentDate);
+                const incidentId = await generateIncidentId(activeWorkingDate);
                 const newIncidentCase = new SafetyIncident({
                     incidentId,
                     type: fullAlert.message || 'Incident',
@@ -238,13 +251,13 @@ io.on('connection', (socket) => {
                     reportedBy: fullAlert.sender,
                     reportedByRole: fullAlert.senderRole,
                     sourceAlertId: newAlert._id,
-                    incidentDate,
-                    eventName: eventName || '',
+                    incidentDate: activeWorkingDate,
+                    eventName: activeEventName,
                 });
                 await newIncidentCase.save();
 
                 emitToRole('head', 'incident-case-created', newIncidentCase);
-                console.log('Incident case auto-created:', newIncidentCase.incidentId, 'for date', incidentDate);
+                console.log('Incident case auto-created:', newIncidentCase.incidentId, 'for date', activeWorkingDate);
             } catch (incidentErr) {
                 console.error('Error auto-creating incident case:', incidentErr.message);
             }
@@ -334,8 +347,16 @@ app.post('/api/alert-media-upload', uploadMediaToDisk.single('alertMedia'), (req
     res.status(200).json({ message: 'Media uploaded successfully!', mediaUrl: mediaUrl });
 });
 
+// GET /api/alerts — supports an optional ?date=YYYY-MM-DD filter so the
+// frontend can reload the persisted feed for the current working date on
+// mount/refresh/navigation, instead of relying on in-memory state.
 app.get('/api/alerts', async (req, res) => {
     try {
+        const { date } = req.query;
+        if (date) {
+            const alerts = await Alert.find({ workingDate: date }).sort({ createdAt: 1 }).limit(500);
+            return res.status(200).json(alerts);
+        }
         const alerts = await Alert.find().sort({ createdAt: -1 }).limit(50);
         res.status(200).json(alerts);
     } catch (error) {
@@ -512,6 +533,60 @@ app.delete('/api/teams/:id', auth, async (req, res) => {
 });
 // --- End Teams CRUD ---
 
+// --- Working Day (Head sets the active date + event name for the real calendar day) ---
+app.get('/api/working-day/current', auth, async (req, res) => {
+    try {
+        const today = getTodayString();
+        const doc = await WorkingDay.findOne({ realDate: today });
+        res.status(200).json(doc || null);
+    } catch (error) {
+        console.error('Error fetching current working day:', error.message);
+        res.status(500).json({ message: 'Failed to fetch current working day.' });
+    }
+});
+
+app.post('/api/working-day', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'head') {
+            return res.status(403).json({ message: 'Only head users can set the working date.' });
+        }
+
+        const { workingDate, eventName } = req.body;
+        if (!workingDate) {
+            return res.status(400).json({ message: 'workingDate is required.' });
+        }
+
+        const today = getTodayString();
+        const doc = await WorkingDay.findOneAndUpdate(
+            { realDate: today },
+            { workingDate, eventName: eventName || '', setBy: req.user.id },
+            { new: true, upsert: true, setDefaultsOnInsert: true }
+        );
+
+        io.emit('working-day-changed', doc);
+
+        res.status(200).json(doc);
+    } catch (error) {
+        console.error('Error setting working day:', error.message);
+        res.status(500).json({ message: 'Failed to set working day.' });
+    }
+});
+
+app.get('/api/working-day/by-date', auth, async (req, res) => {
+    try {
+        const { date } = req.query;
+        if (!date) {
+            return res.status(400).json({ message: 'date query parameter is required.' });
+        }
+        const doc = await WorkingDay.findOne({ workingDate: date }).sort({ createdAt: -1 });
+        res.status(200).json(doc || null);
+    } catch (error) {
+        console.error('Error fetching working day by date:', error.message);
+        res.status(500).json({ message: 'Failed to fetch working day.' });
+    }
+});
+// --- End Working Day ---
+
 // --- Incident Management (SafetyIncident) ---
 app.get('/api/incident-reports', auth, async (req, res) => {
     try {
@@ -539,8 +614,6 @@ app.get('/api/incident-reports', auth, async (req, res) => {
 
 app.get('/api/incident-reports/summary', auth, async (req, res) => {
     try {
-        // Pending count is intentionally all-time (not date-scoped) — it
-        // reflects total outstanding work across every working date.
         if (req.user.role === 'head') {
             const pending = await SafetyIncident.countDocuments({ status: { $ne: 'Resolved' } });
             return res.status(200).json({ pending });

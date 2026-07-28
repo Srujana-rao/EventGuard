@@ -28,6 +28,127 @@ function Alert(props) {
   return <MuiAlert elevation={6} variant="filled" {...props} />;
 }
 
+function WorkingDayPanel({ userRole, workingDate, workingEventName, workingDayLoaded, saveWorkingDay }) {
+  const isHead = userRole === 'head';
+  const [draftDate, setDraftDate] = useState(workingDate);
+  const [draftEventName, setDraftEventName] = useState(workingEventName);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState('');
+
+  useEffect(() => {
+    setDraftDate(workingDate);
+    setDraftEventName(workingEventName);
+  }, [workingDate, workingEventName]);
+
+  const formattedDate = workingDate
+    ? new Date(`${workingDate}T00:00:00`).toLocaleDateString(undefined, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : '';
+
+  const handleSave = async () => {
+    if (!draftDate) return;
+    setSaving(true);
+    setSaveError('');
+    setSaveSuccess('');
+    try {
+      await saveWorkingDay(draftDate, draftEventName);
+      setSaveSuccess('Working date updated.');
+      setTimeout(() => setSaveSuccess(''), 3000);
+    } catch (err) {
+      setSaveError(err.response?.data?.message || 'Failed to update working date.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!workingDayLoaded) {
+    return null;
+  }
+
+  if (!isHead) {
+    return (
+      <Paper
+        elevation={2}
+        sx={{
+          p: { xs: 2, md: 3 },
+          borderRadius: 3,
+          mb: 3,
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 1.5,
+          alignItems: 'center',
+        }}
+      >
+        <CalendarMonthIcon sx={{ color: '#667eea' }} />
+        <Typography variant="body2" sx={{ color: '#333' }}>
+          Working Date: <strong>{formattedDate}</strong>
+          {workingEventName && (
+            <>
+              {' '}&nbsp;|&nbsp; Event: <strong>{workingEventName}</strong>
+            </>
+          )}
+        </Typography>
+      </Paper>
+    );
+  }
+
+  return (
+    <Paper
+      elevation={2}
+      sx={{
+        p: { xs: 2, md: 3 },
+        borderRadius: 3,
+        mb: 3,
+      }}
+    >
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+        <CalendarMonthIcon sx={{ color: '#667eea' }} />
+        <TextField
+          label="Working Date"
+          type="date"
+          size="small"
+          value={draftDate}
+          onChange={(e) => setDraftDate(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          sx={{ minWidth: 180 }}
+        />
+        <TextField
+          label="Event Name (optional)"
+          size="small"
+          value={draftEventName}
+          onChange={(e) => setDraftEventName(e.target.value)}
+          placeholder="e.g. Summer Fest 2026"
+          sx={{ minWidth: 220 }}
+        />
+        <Button
+          variant="contained"
+          size="small"
+          disabled={!draftDate || saving}
+          onClick={handleSave}
+          sx={{ textTransform: 'none' }}
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </Button>
+      </Box>
+      {saveError && (
+        <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1 }}>
+          {saveError}
+        </Typography>
+      )}
+      {saveSuccess && (
+        <Typography variant="caption" color="success.main" sx={{ display: 'block', mt: 1 }}>
+          {saveSuccess}
+        </Typography>
+      )}
+    </Paper>
+  );
+}
+
 const AlertsTab = ({
   alertMessage,
   setAlertMessage,
@@ -388,9 +509,9 @@ export default function Dashboard({
   approvalsPending = 0,
   meetingNotificationCount = 0,
   workingDate,
-  setWorkingDate,
   workingEventName,
-  setWorkingEventName,
+  workingDayLoaded,
+  saveWorkingDay,
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [myTeam, setMyTeam] = useState(null);
@@ -449,15 +570,6 @@ export default function Dashboard({
       window.removeEventListener('focus', refreshIncidentSummary);
     };
   }, []);
-
-  const formattedWorkingDate = workingDate
-    ? new Date(`${workingDate}T00:00:00`).toLocaleDateString(undefined, {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : '';
 
   return (
     <Box
@@ -608,42 +720,13 @@ export default function Dashboard({
           }}
           role="main"
         >
-          {/* Working Date / Event Name selector — sets the active date for incidents */}
-          <Paper
-            elevation={2}
-            sx={{
-              p: { xs: 2, md: 3 },
-              borderRadius: 3,
-              mb: 3,
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 2,
-              alignItems: 'center',
-            }}
-          >
-            <CalendarMonthIcon sx={{ color: '#667eea' }} />
-            <TextField
-              label="Working Date"
-              type="date"
-              size="small"
-              value={workingDate}
-              onChange={(e) => setWorkingDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: 180 }}
-            />
-            <TextField
-              label="Event Name (optional)"
-              size="small"
-              value={workingEventName}
-              onChange={(e) => setWorkingEventName(e.target.value)}
-              placeholder="e.g. Summer Fest 2026"
-              sx={{ minWidth: 220 }}
-            />
-            <Typography variant="body2" sx={{ color: '#666', ml: { md: 'auto' } }}>
-              Working on: <strong>{formattedWorkingDate}</strong>
-              {workingEventName && <> — {workingEventName}</>}
-            </Typography>
-          </Paper>
+          <WorkingDayPanel
+            userRole={userRole}
+            workingDate={workingDate}
+            workingEventName={workingEventName}
+            workingDayLoaded={workingDayLoaded}
+            saveWorkingDay={saveWorkingDay}
+          />
 
           <AlertsTab
             alertMessage={alertMessage}
