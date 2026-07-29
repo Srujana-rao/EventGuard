@@ -18,6 +18,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import SecurityIcon from '@mui/icons-material/Security';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import SidebarMenu from './SidebarMenu';
+import { socket } from '../socket';
 
 const topBarBg = '#ffffff';
 const topBarTextColor = '#333';
@@ -118,7 +119,7 @@ function WorkingDayPanel({ userRole, workingDate, workingEventName, workingDayLo
           sx={{ minWidth: 180 }}
         />
         <TextField
-          label="Event Name (optional)"
+          label="Event Name"
           size="small"
           value={draftEventName}
           onChange={(e) => setDraftEventName(e.target.value)}
@@ -171,13 +172,14 @@ const AlertsTab = ({
     !alertTargetRole ||
     !alertPriority;
 
+  // Priority vocabulary: low / medium / critical (matches Incidents module)
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'info':
+      case 'low':
         return 'success';
-      case 'urgent':
+      case 'critical':
         return 'error';
-      case 'important':
+      case 'medium':
         return 'warning';
       default:
         return 'default';
@@ -224,7 +226,7 @@ const AlertsTab = ({
                 size="small"
                 onClick={() => {
                   setAlertMessage("Fire reported");
-                  setAlertPriority("urgent");
+                  setAlertPriority("critical");
                 }}
               >
                 Fire
@@ -235,7 +237,7 @@ const AlertsTab = ({
                 size="small"
                 onClick={() => {
                   setAlertMessage("Medical Emergency");
-                  setAlertPriority("urgent");
+                  setAlertPriority("critical");
                 }}
               >
                 Medical
@@ -246,7 +248,7 @@ const AlertsTab = ({
                 size="small"
                 onClick={() => {
                   setAlertMessage("Security Issue");
-                  setAlertPriority("urgent");
+                  setAlertPriority("critical");
                 }}
               >
                 Security
@@ -353,27 +355,27 @@ const AlertsTab = ({
 
             <Box sx={{ display: "flex", gap: 1 }}>
               <Button
-                variant={alertPriority === "info" ? "contained" : "outlined"}
+                variant={alertPriority === "low" ? "contained" : "outlined"}
                 color="success"
-                onClick={() => setAlertPriority("info")}
+                onClick={() => setAlertPriority("low")}
               >
-                Info
+                Low
               </Button>
 
               <Button
-                variant={alertPriority === "important" ? "contained" : "outlined"}
+                variant={alertPriority === "medium" ? "contained" : "outlined"}
                 color="warning"
-                onClick={() => setAlertPriority("important")}
+                onClick={() => setAlertPriority("medium")}
               >
-                Important
+                Medium
               </Button>
 
               <Button
-                variant={alertPriority === "urgent" ? "contained" : "outlined"}
+                variant={alertPriority === "critical" ? "contained" : "outlined"}
                 color="error"
-                onClick={() => setAlertPriority("urgent")}
+                onClick={() => setAlertPriority("critical")}
               >
-                Urgent
+                Critical
               </Button>
             </Box>
           </Box>
@@ -516,6 +518,7 @@ export default function Dashboard({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [myTeam, setMyTeam] = useState(null);
   const [incidentsPending, setIncidentsPending] = useState(0);
+  const [chatUnread, setChatUnread] = useState(0);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -571,6 +574,39 @@ export default function Dashboard({
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    const token = localStorage.getItem('token');
+    if (!token) return undefined;
+
+    const refreshChatUnread = () => {
+      axios
+        .get(`${API_BASE_URL}/chat/unread-summary`, { headers: { 'x-auth-token': token } })
+        .then((res) => {
+          if (isMounted) setChatUnread(res.data?.total || 0);
+        })
+        .catch(() => {});
+    };
+
+    refreshChatUnread();
+
+    const handleChatUnreadUpdate = () => refreshChatUnread();
+    const handleChatBadgeRefresh = () => refreshChatUnread();
+
+    socket.on('chat-unread-update', handleChatUnreadUpdate);
+    socket.on('receive-chat-message', handleChatUnreadUpdate);
+    window.addEventListener('chat-badge-refresh', handleChatBadgeRefresh);
+    window.addEventListener('focus', refreshChatUnread);
+
+    return () => {
+      isMounted = false;
+      socket.off('chat-unread-update', handleChatUnreadUpdate);
+      socket.off('receive-chat-message', handleChatUnreadUpdate);
+      window.removeEventListener('chat-badge-refresh', handleChatBadgeRefresh);
+      window.removeEventListener('focus', refreshChatUnread);
+    };
+  }, []);
+
   return (
     <Box
       sx={{
@@ -588,6 +624,7 @@ export default function Dashboard({
         approvalsPending={approvalsPending}
         meetingsPending={meetingNotificationCount}
         incidentsPending={incidentsPending}
+        chatUnread={chatUnread}
         mobileOpen={mobileOpen}
         onDrawerToggle={handleDrawerToggle}
         onLogout={handleLogout}

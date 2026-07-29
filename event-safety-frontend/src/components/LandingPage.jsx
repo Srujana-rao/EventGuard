@@ -21,7 +21,8 @@ import {
   EventAvailable,
   Shield,
 } from '@mui/icons-material';
-
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import Groups2Icon from '@mui/icons-material/Groups2';
 export default function LandingPage() {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -60,6 +61,16 @@ export default function LandingPage() {
       description:
         'Schedule meetings by role, with instant notifications.',
     },
+    {
+  icon: <ReportProblemIcon sx={{ fontSize: 40, color: '#667eea' }} />,
+  title: 'Incident Management',
+  description: 'Track every incident from open to resolved, with full assignment history.',
+},
+{
+  icon: <Groups2Icon sx={{ fontSize: 40, color: '#667eea' }} />,
+  title: 'Team Coordination',
+  description: 'Organize response teams and assign incidents directly to the right people.',
+},
   ];
 
   return (

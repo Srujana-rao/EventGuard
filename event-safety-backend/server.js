@@ -12,6 +12,7 @@ const Team = require('./models/Team');
 const Counter = require('./models/Counter');
 const SafetyIncident = require('./models/SafetyIncident');
 const WorkingDay = require('./models/WorkingDay');
+const Message = require('./models/Message');
 const jwt = require('jsonwebtoken');
 const auth = require('./routes/auth').auth;
 
@@ -71,6 +72,8 @@ const incidentSchema = new mongoose.Schema({
 }, { timestamps: true });
 const Incident = mongoose.model('Incident', incidentSchema);
 
+// Priority now uses the same low/medium/critical vocabulary as Incidents
+// (was previously info/important/urgent)
 const alertSchema = new mongoose.Schema({
     message: { type: String, trim: true },
     mediaUrl: { type: String, default: null },
@@ -79,10 +82,10 @@ const alertSchema = new mongoose.Schema({
     senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     senderRole: { type: String, required: true },
     targetRole: { type: String, enum: ['all', 'head', 'room', 'ground', null], default: null },
-    priority: { type: String, enum: ['urgent', 'important', 'info'], default: 'info' },
+    priority: { type: String, enum: ['critical', 'medium', 'low'], default: 'low' },
     locationTag: { type: String, trim: true, default: '' },
-    workingDate: { type: String, default: null, index: true }, // NEW — which working date this alert belongs to
-    timestamp: { type: Date, default: Date.now }, // NEW — explicit field (was previously silently dropped by Mongoose)
+    workingDate: { type: String, default: null, index: true },
+    timestamp: { type: Date, default: Date.now },
 }, { timestamps: true });
 const Alert = mongoose.model('Alert', alertSchema);
 
@@ -104,13 +107,15 @@ async function generateIncidentId(dateStr) {
     return `INC-${counter.seq}`;
 }
 
+// Alert priority (low/medium/critical) already matches Incident priority
+// vocabulary — just needs the casing SafetyIncident's enum expects.
 function mapAlertPriorityToIncidentPriority(alertPriority) {
     switch (alertPriority) {
-        case 'urgent':
+        case 'critical':
             return 'Critical';
-        case 'important':
+        case 'medium':
             return 'Medium';
-        case 'info':
+        case 'low':
         default:
             return 'Low';
     }
@@ -193,10 +198,6 @@ io.on('connection', (socket) => {
         const { targetRole, message, mediaUrl, mediaType, priority, locationTag } = alertData;
 
         try {
-            // Look up the authoritative working day directly from the server —
-            // never trust the client's cached value for this. This is what
-            // guarantees alerts/incidents are always filed under the correct
-            // date and that incident numbering resets properly on a new day.
             const today = getTodayString();
             const workingDayDoc = await WorkingDay.findOne({ realDate: today });
             const activeWorkingDate = workingDayDoc?.workingDate || today;
@@ -216,7 +217,7 @@ io.on('connection', (socket) => {
                 workingDate: activeWorkingDate,
             };
 
-            console.log(`Alert from ${fullAlert.sender} (${fullAlert.senderRole}) (Target: ${targetRole || 'All'}) (Priority: ${priority || 'info'}) (Location: ${locationTag || 'N/A'}) (Working Date: ${activeWorkingDate}):`, fullAlert.message);
+            console.log(`Alert from ${fullAlert.sender} (${fullAlert.senderRole}) (Target: ${targetRole || 'All'}) (Priority: ${priority || 'low'}) (Location: ${locationTag || 'N/A'}) (Working Date: ${activeWorkingDate}):`, fullAlert.message);
 
             const newAlert = new Alert(fullAlert);
             await newAlert.save();
@@ -238,8 +239,6 @@ io.on('connection', (socket) => {
                 }
             }
 
-            // Auto-create an Incident case, stamped with the server-authoritative
-            // working date (never derived from client-supplied data).
             try {
                 const incidentId = await generateIncidentId(activeWorkingDate);
                 const newIncidentCase = new SafetyIncident({
@@ -266,6 +265,39 @@ io.on('connection', (socket) => {
             console.error('Error saving or emitting alert:', error.message);
         }
     });
+
+    // --- Chat ---
+    socket.on('send-chat-message', async ({ receiverId, text }) => {
+        if (!socket.user) return;
+        if (!receiverId || !text || !text.trim()) return;
+
+        try {
+            const newMessage = new Message({
+                sender: socket.user.id,
+                receiver: receiverId,
+                text: text.trim(),
+            });
+            await newMessage.save();
+
+            const payload = {
+                _id: newMessage._id,
+                sender: socket.user.id,
+                receiver: receiverId,
+                text: newMessage.text,
+                read: false,
+                createdAt: newMessage.createdAt,
+            };
+
+            // Deliver to both sides so every open tab of sender/receiver updates live
+            emitToUserIds([receiverId, socket.user.id], 'receive-chat-message', payload);
+
+            const unreadTotal = await Message.countDocuments({ receiver: receiverId, read: false });
+            emitToUserIds([receiverId], 'chat-unread-update', { total: unreadTotal });
+        } catch (error) {
+            console.error('Error sending chat message:', error.message);
+        }
+    });
+    // --- End Chat ---
 
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
@@ -347,9 +379,6 @@ app.post('/api/alert-media-upload', uploadMediaToDisk.single('alertMedia'), (req
     res.status(200).json({ message: 'Media uploaded successfully!', mediaUrl: mediaUrl });
 });
 
-// GET /api/alerts — supports an optional ?date=YYYY-MM-DD filter so the
-// frontend can reload the persisted feed for the current working date on
-// mount/refresh/navigation, instead of relying on in-memory state.
 app.get('/api/alerts', async (req, res) => {
     try {
         const { date } = req.query;
@@ -533,7 +562,7 @@ app.delete('/api/teams/:id', auth, async (req, res) => {
 });
 // --- End Teams CRUD ---
 
-// --- Working Day (Head sets the active date + event name for the real calendar day) ---
+// --- Working Day ---
 app.get('/api/working-day/current', auth, async (req, res) => {
     try {
         const today = getTodayString();
@@ -756,6 +785,63 @@ app.patch('/api/incident-reports/:id/status', auth, async (req, res) => {
     }
 });
 // --- End Incident Management ---
+
+// --- Chat ---
+app.get('/api/chat/unread-summary', auth, async (req, res) => {
+    try {
+        const total = await Message.countDocuments({ receiver: req.user.id, read: false });
+        res.status(200).json({ total });
+    } catch (error) {
+        console.error('Error fetching chat unread summary:', error.message);
+        res.status(500).json({ message: 'Failed to fetch unread summary.' });
+    }
+});
+
+app.get('/api/chat/unread-by-sender', auth, async (req, res) => {
+    try {
+        const results = await Message.aggregate([
+            { $match: { receiver: new mongoose.Types.ObjectId(req.user.id), read: false } },
+            { $group: { _id: '$sender', count: { $sum: 1 } } },
+        ]);
+        const map = {};
+        results.forEach((r) => { map[String(r._id)] = r.count; });
+        res.status(200).json(map);
+    } catch (error) {
+        console.error('Error fetching unread-by-sender:', error.message);
+        res.status(500).json({ message: 'Failed to fetch unread counts.' });
+    }
+});
+
+app.get('/api/chat/messages/:userId', auth, async (req, res) => {
+    try {
+        const otherId = req.params.userId;
+        const messages = await Message.find({
+            $or: [
+                { sender: req.user.id, receiver: otherId },
+                { sender: otherId, receiver: req.user.id },
+            ],
+        }).sort({ createdAt: 1 }).limit(500);
+        res.status(200).json(messages);
+    } catch (error) {
+        console.error('Error fetching chat messages:', error.message);
+        res.status(500).json({ message: 'Failed to fetch messages.' });
+    }
+});
+
+app.patch('/api/chat/read/:userId', auth, async (req, res) => {
+    try {
+        const otherId = req.params.userId;
+        await Message.updateMany(
+            { sender: otherId, receiver: req.user.id, read: false },
+            { $set: { read: true } }
+        );
+        res.status(200).json({ message: 'Messages marked as read.' });
+    } catch (error) {
+        console.error('Error marking messages read:', error.message);
+        res.status(500).json({ message: 'Failed to mark messages read.' });
+    }
+});
+// --- End Chat ---
 
 app.get('/api/users', async (_req, res) => {
     try {

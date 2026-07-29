@@ -21,7 +21,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import Groups2Icon from '@mui/icons-material/Groups2';
 import SecurityIcon from '@mui/icons-material/Security';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
-
+import ChatIcon from '@mui/icons-material/Chat';
 
 const sidebarGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)';
 const sidebarWidth = 220;
@@ -31,6 +31,7 @@ export default function SidebarMenu({
   approvalsPending = 0,
   meetingsPending = 0,
   incidentsPending = 0,
+  chatUnread = 0,
   mobileOpen,
   onDrawerToggle,
   onLogout,
@@ -43,6 +44,7 @@ export default function SidebarMenu({
   const matchSettings = location.pathname === '/settings';
   const matchTeams = location.pathname === '/teams';
   const matchIncidents = location.pathname === '/incidents';
+  const matchChat = location.pathname === '/chat';
 
   const headButtons = [
     {
@@ -62,13 +64,21 @@ export default function SidebarMenu({
       active: matchDashboard,
     },
     {
-  label: 'Incidents',
-  to: '/incidents',
-  icon: <ReportProblemIcon />,
-  showBadge: incidentsPending > 0,
-  badgeContent: incidentsPending,
-  active: matchIncidents,
-},
+      label: 'Incidents',
+      to: '/incidents',
+      icon: <ReportProblemIcon />,
+      showBadge: incidentsPending > 0,
+      badgeContent: incidentsPending,
+      active: matchIncidents,
+    },
+    {
+      label: 'Chat',
+      to: '/chat',
+      icon: <ChatIcon />,
+      showBadge: chatUnread > 0,
+      badgeContent: chatUnread,
+      active: matchChat,
+    },
     {
       label: 'Staff Info',
       to: '/staff-info',
@@ -104,55 +114,63 @@ export default function SidebarMenu({
   ];
 
   const nonHeadButtons = [
-  {
-    label: 'Main Dashboard',
-    to: '/dashboard',
-    icon: <NotificationsActiveIcon />,
-    showBadge: false,
-    badgeContent: null,
-    active: matchDashboard,
-  },
-  {
-  label: 'Incidents',
-  to: '/incidents',
-  icon: <ReportProblemIcon />,
-  showBadge: incidentsPending > 0,
-  badgeContent: incidentsPending,
-  active: matchIncidents,
-},
-  {
-    label: 'Staff Info',
-    to: '/staff-info',
-    icon: <GroupsIcon />,
-    showBadge: false,
-    badgeContent: null,
-    active: matchStaffInfo,
-  },
-  {
-    label: 'Meetings',
-    to: '/meetings',
-    icon: <EventNoteIcon />,
-    showBadge: meetingsPending > 0,
-    badgeContent: meetingsPending,
-    active: matchMeetings,
-  },
-  {
-    label: 'Teams',
-    to: '/teams',
-    icon: <Groups2Icon />,
-    showBadge: false,
-    badgeContent: null,
-    active: matchTeams,
-  },
-  {
-    label: 'Settings',
-    to: '/settings',
-    icon: <SettingsIcon />,
-    showBadge: false,
-    badgeContent: null,
-    active: matchSettings,
-  },
-];
+    {
+      label: 'Main Dashboard',
+      to: '/dashboard',
+      icon: <NotificationsActiveIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchDashboard,
+    },
+    {
+      label: 'Incidents',
+      to: '/incidents',
+      icon: <ReportProblemIcon />,
+      showBadge: incidentsPending > 0,
+      badgeContent: incidentsPending,
+      active: matchIncidents,
+    },
+    {
+      label: 'Chat',
+      to: '/chat',
+      icon: <ChatIcon />,
+      showBadge: chatUnread > 0,
+      badgeContent: chatUnread,
+      active: matchChat,
+    },
+    {
+      label: 'Staff Info',
+      to: '/staff-info',
+      icon: <GroupsIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchStaffInfo,
+    },
+    {
+      label: 'Meetings',
+      to: '/meetings',
+      icon: <EventNoteIcon />,
+      showBadge: meetingsPending > 0,
+      badgeContent: meetingsPending,
+      active: matchMeetings,
+    },
+    {
+      label: 'Teams',
+      to: '/teams',
+      icon: <Groups2Icon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchTeams,
+    },
+    {
+      label: 'Settings',
+      to: '/settings',
+      icon: <SettingsIcon />,
+      showBadge: false,
+      badgeContent: null,
+      active: matchSettings,
+    },
+  ];
 
   const buttons = userRole === 'head' ? headButtons : nonHeadButtons;
 

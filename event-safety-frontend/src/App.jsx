@@ -18,6 +18,7 @@ import Teams from './components/Teams';
 import PendingApproval from './components/PendingApproval';
 import SocialSuccess from './components/SocialSuccess';
 import Incidents from './components/Incidents';
+import Chat from './components/Chat';
 
 // Socket.IO client instance
 import { socket } from './socket';
@@ -42,8 +43,8 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
   const [alertMediaFile, setAlertMediaFile] = useState(null);
   const [alertSendError, setAlertSendError] = useState(null);
   const [alertSendSuccess, setAlertSendSuccess] = useState('');
-  const [alertTargetRole, setAlertTargetRole] = useState('all'); // 'all', 'head', 'room', 'ground'
-  const [alertPriority, setAlertPriority] = useState('info'); // 'urgent', 'important', 'info'
+  const [alertTargetRole, setAlertTargetRole] = useState('all'); 
+  const [alertPriority, setAlertPriority] = useState('low'); 
   const [alertLocationTag, setAlertLocationTag] = useState('');
 
   // Working date / event name — the server-shared active date for the current
@@ -563,6 +564,18 @@ function App() {
             )
           }
         />
+        <Route
+  path="/chat"
+  element={
+    isAuthenticated ? (
+      <DashboardShell title="Chat" userRole={userRole} username={username}>
+        <Chat />
+      </DashboardShell>
+    ) : (
+      <Navigate to="/login" replace />
+    )
+  }
+/>
       </Routes>
     </Router>
   );

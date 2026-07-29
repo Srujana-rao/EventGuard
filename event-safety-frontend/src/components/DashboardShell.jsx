@@ -24,6 +24,7 @@ export default function DashboardShell({ children, title, userRole: propUserRole
   const [myTeam, setMyTeam] = useState(null);
   const [hideTopBar, setHideTopBar] = useState(false);
   const [incidentsPending, setIncidentsPending] = useState(0);
+  const [chatUnread, setChatUnread] = useState(0);
 
   const { username, userRole } = useMemo(() => {
     if (propUserRole && propUsername) {
@@ -48,6 +49,15 @@ export default function DashboardShell({ children, title, userRole: propUserRole
     return () => window.removeEventListener('teams-dialog-toggle', handleDialogToggle);
   }, []);
 
+  const refreshChatUnread = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    axios
+      .get(`${API_BASE_URL}/chat/unread-summary`, { headers: { 'x-auth-token': token } })
+      .then((res) => setChatUnread(res.data?.total || 0))
+      .catch(() => {});
+  };
+
   useEffect(() => {
     let isMounted = true;
     const token = localStorage.getItem('token');
@@ -68,14 +78,24 @@ export default function DashboardShell({ children, title, userRole: propUserRole
       } catch {
         // non-critical
       }
-try {
-  const incidentSummaryRes = await axios.get(`${API_BASE_URL}/incident-reports/summary`, config);
-  if (isMounted) {
-    setIncidentsPending(incidentSummaryRes.data?.pending || 0);
-  }
-} catch {
-  // non-critical
-}
+
+      try {
+        const incidentSummaryRes = await axios.get(`${API_BASE_URL}/incident-reports/summary`, config);
+        if (isMounted) {
+          setIncidentsPending(incidentSummaryRes.data?.pending || 0);
+        }
+      } catch {
+        // non-critical
+      }
+
+      try {
+        const chatRes = await axios.get(`${API_BASE_URL}/chat/unread-summary`, config);
+        if (isMounted) {
+          setChatUnread(chatRes.data?.total || 0);
+        }
+      } catch {
+        // non-critical
+      }
 
       if (userRole === 'head') {
         try {
@@ -106,21 +126,29 @@ try {
     const handleMeetingDeleted = () => {
       setMeetingsPending((prev) => (prev > 0 ? prev - 1 : 0));
     };
-   const handleIncidentUpdate = () => {
-  // Re-fetch the summary count rather than guessing increment/decrement locally
-  const token = localStorage.getItem('token');
-  if (!token) return;
-  axios
-    .get(`${API_BASE_URL}/incident-reports/summary`, { headers: { 'x-auth-token': token } })
-    .then((res) => setIncidentsPending(res.data?.pending || 0))
-    .catch(() => {});
-};
+    const handleIncidentUpdate = () => {
+      const t = localStorage.getItem('token');
+      if (!t) return;
+      axios
+        .get(`${API_BASE_URL}/incident-reports/summary`, { headers: { 'x-auth-token': t } })
+        .then((res) => setIncidentsPending(res.data?.pending || 0))
+        .catch(() => {});
+    };
+    const handleChatUnreadUpdate = () => {
+      refreshChatUnread();
+    };
+    const handleChatBadgeRefresh = () => {
+      refreshChatUnread();
+    };
+
     socket.on('new-meeting', handleNewMeeting);
     socket.on('meeting-deleted', handleMeetingDeleted);
     socket.on('incident-case-created', handleIncidentUpdate);
     socket.on('incident-case-updated', handleIncidentUpdate);
     socket.on('incident-assigned', handleIncidentUpdate);
-    
+    socket.on('chat-unread-update', handleChatUnreadUpdate);
+    socket.on('receive-chat-message', handleChatUnreadUpdate);
+    window.addEventListener('chat-badge-refresh', handleChatBadgeRefresh);
 
     return () => {
       isMounted = false;
@@ -129,6 +157,9 @@ try {
       socket.off('incident-case-created', handleIncidentUpdate);
       socket.off('incident-case-updated', handleIncidentUpdate);
       socket.off('incident-assigned', handleIncidentUpdate);
+      socket.off('chat-unread-update', handleChatUnreadUpdate);
+      socket.off('receive-chat-message', handleChatUnreadUpdate);
+      window.removeEventListener('chat-badge-refresh', handleChatBadgeRefresh);
     };
   }, [userRole]);
 
@@ -161,6 +192,7 @@ try {
         approvalsPending={approvalsPending}
         meetingsPending={meetingsPending}
         incidentsPending={incidentsPending}
+        chatUnread={chatUnread}
         mobileOpen={mobileOpen}
         onDrawerToggle={handleDrawerToggle}
         onLogout={handleLogout}
