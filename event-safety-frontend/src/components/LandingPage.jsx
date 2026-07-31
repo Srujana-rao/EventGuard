@@ -74,7 +74,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <Box sx={{ minHeight: '100vh' }}>
+    <Box sx={{ minHeight: '100vh', overflowX: 'hidden' }}>
       {/* Navigation Bar */}
       <AppBar
         position="fixed"
@@ -84,14 +84,14 @@ export default function LandingPage() {
           boxShadow: '0 2px 20px rgba(0, 0, 0, 0.1)',
         }}
       >
-        <Toolbar sx={{ py: 1.5 }}>
+        <Toolbar sx={{ py: 1.5, flexWrap: 'wrap', gap: 1 }}>
           <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-            <Security sx={{ fontSize: 50, color: '#667eea', mr: 2 }} />
+            <Security sx={{ fontSize: { xs: 32, sm: 40, md: 50 }, color: '#667eea', mr: { xs: 1, sm: 2 } }} />
             <Typography
   variant="h5"
   sx={{
     fontWeight: 700,
-    fontSize: '1.8rem',   // add this line — was relying on default h5 size (~1.5rem)
+    fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.8rem' },
     background:
       'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     backgroundClip: 'text',
@@ -103,7 +103,7 @@ export default function LandingPage() {
 </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
             <Button
               variant="outlined"
               onClick={handleLogin}
@@ -111,9 +111,9 @@ export default function LandingPage() {
               sx={{
                 borderColor: '#667eea',
                 color: '#667eea',
-                px: 3,
+                px: { xs: 1.5, sm: 3 },
                 py: 1,
-                fontSize: '1rem',
+                fontSize: { xs: '0.85rem', sm: '1rem' },
                 fontWeight: 600,
                 '&:hover': {
                   borderColor: '#764ba2',
@@ -130,9 +130,9 @@ export default function LandingPage() {
               sx={{
                 background:
                   'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                px: 3,
+                px: { xs: 1.5, sm: 3 },
                 py: 1,
-                fontSize: '1rem',
+                fontSize: { xs: '0.85rem', sm: '1rem' },
                 fontWeight: 600,
                 '&:hover': {
                   background:
@@ -149,7 +149,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <Box
         sx={{
-          pt: 12,
+          pt: { xs: 10, md: 12 },
           minHeight: '90vh',
           width: '100%',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -173,8 +173,8 @@ export default function LandingPage() {
           }}
         />
 
-        <Container maxWidth={false} sx={{ px: 6, position: 'relative' }}>
-          <Box sx={{ maxWidth: '600px' }}>
+        <Container maxWidth={false} sx={{ px: { xs: 3, md: 6 }, position: 'relative' }}>
+          <Box sx={{ maxWidth: { xs: '100%', md: '600px' } }}>
             <Typography
   variant="h3"
   sx={{
@@ -182,9 +182,9 @@ export default function LandingPage() {
     color: 'white',
     mb: 2.5,
     fontSize: isMobile ? '2rem' : '2.8rem',
-    lineHeight: 1.15,      // tighter — was 1.3
+    lineHeight: 1.15,
     textAlign: 'left',
-    marginLeft: 3,
+    marginLeft: { xs: 0, md: 3 },
   }}  
 >
   EventGuard
@@ -192,7 +192,7 @@ export default function LandingPage() {
     component="span"
     sx={{
       display: 'block',
-      mt: 1,               // small controlled gap instead of relying on lineHeight
+      mt: 1,
       background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
       backgroundClip: 'text',
       WebkitBackgroundClip: 'text',
@@ -207,11 +207,12 @@ export default function LandingPage() {
   variant="h6"
   sx={{
     color: 'rgba(255, 255, 255, 0.9)',
-    mb: 2.5,               // same as h3's mb above
+    mb: 2.5,
     fontWeight: 400,
     lineHeight: 1.4,
     textAlign: 'left',
-    marginLeft: 3,
+    marginLeft: { xs: 0, md: 3 },
+    fontSize: { xs: '0.95rem', md: '1.25rem' },
   }}
 >
   EventGuard connects Head, Room, and Ground staff during an event with live alerts and meeting scheduling — All updated in real time.
@@ -236,7 +237,7 @@ export default function LandingPage() {
                     transform: 'translateY(-2px)',
                   },
                   transition: 'all 0.3s ease',
-                  marginLeft: 3,
+                  marginLeft: { xs: 0, md: 3 },
                 }}
               >
                 Get Started
@@ -244,8 +245,11 @@ export default function LandingPage() {
             </Box>
           </Box>
 
+          {/* Decorative floating shield graphic — hidden on mobile/tablet since
+              its absolute positioning would overlap the hero text on small screens */}
           <Box
             sx={{
+              display: { xs: 'none', lg: 'flex' },
               position: 'absolute',
               top: '50%',
               right: '5%',
@@ -256,7 +260,6 @@ export default function LandingPage() {
               background:
                 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%)',
               backdropFilter: 'blur(15px)',
-              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               border: '2px solid rgba(255, 255, 255, 0.3)',
@@ -335,22 +338,19 @@ export default function LandingPage() {
         </Container>
       </Box>
 
-{/* Stats Strip */}
+{/* Stats Strip — was position: absolute (fragile, could overlap content
+    on smaller viewports); now flows normally in the layout on all sizes */}
       <Box
   sx={{
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: '-5px', 
+    position: 'relative',
     py: 3.5,
-    pb: 3,
     px: { xs: 3, md: 6 },
     backgroundColor: '#f8f9fa',
     zIndex: 3,
     borderBottom: '1px solid #e5e7eb',
   }}
 >
-        <Grid container spacing={15} justifyContent="center" textAlign="center">
+        <Grid container spacing={{ xs: 3, md: 15 }} justifyContent="center" textAlign="center">
           {[
             { number: '50+', label: 'Events Secured' },
             { number: '24/7', label: 'Live Monitoring' },
@@ -361,7 +361,7 @@ export default function LandingPage() {
               <Typography
                 sx={{
                   fontWeight: 800,
-                  fontSize: '1.4rem',
+                  fontSize: { xs: '1.1rem', md: '1.4rem' },
                   color: '#667eea',
                   lineHeight: 1.2,
                 }}
@@ -370,7 +370,7 @@ export default function LandingPage() {
               </Typography>
               <Typography
                 sx={{
-                  fontSize: '0.8rem',
+                  fontSize: { xs: '0.7rem', md: '0.8rem' },
                   color: '#666',
                   fontWeight: 500,
                 }}
@@ -383,15 +383,15 @@ export default function LandingPage() {
       </Box>
 
       {/* Features Section */}
-      <Box sx={{ py: 10, mt: 5, backgroundColor: '#f8f9fa' }}>
+      <Box sx={{ py: { xs: 6, md: 10 }, backgroundColor: '#f8f9fa' }}>
         <Container maxWidth="lg">
-          <Box textAlign="center" mb={6}>
-            <Typography variant="h4" sx={{color: '#667eea', fontWeight: 700, mb: 2 }}>
+          <Box textAlign="center" mb={{ xs: 4, md: 6 }}>
+            <Typography variant="h4" sx={{ color: '#667eea', fontWeight: 700, mb: 2, fontSize: { xs: '1.6rem', md: '2.125rem' } }}>
               Everything Your Security Team Needs
             </Typography>
             <Typography
               variant="body1"
-              sx={{ color: '#030000', maxWidth: '700px', mx: 'auto' }}
+              sx={{ color: '#030000', maxWidth: '700px', mx: 'auto', px: { xs: 1, md: 0 } }}
             >
              One dashboard to stay coordinated during an event, from the first alert to the after-action review.
             </Typography>
@@ -406,7 +406,11 @@ export default function LandingPage() {
                   sm={6}
                   key={index}
                   display="flex"
-                  justifyContent={index === 4 ? "center" : "flex-start"}
+                  justifyContent={
+                    index === features.length - 1 && features.length % 2 !== 0
+                      ? "center"
+                      : { xs: 'center', sm: 'flex-start' }
+                  }
               >
                 <Card
                   sx={{
@@ -462,14 +466,14 @@ export default function LandingPage() {
       {/* CTA Section */}
       <Box
         sx={{
-          py: 7,
+          py: { xs: 5, md: 7 },
           background: 'linear-gradient(135deg, #333 0%, #555 100%)',
           color: 'white',
         }}
       >
-        <Container maxWidth={false} sx={{ px: 4 }}>
+        <Container maxWidth={false} sx={{ px: { xs: 3, md: 4 } }}>
           <Box textAlign="center">
-            <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
               Ready to Coordinate Your Next Event?
             </Typography>
             <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
@@ -508,8 +512,8 @@ export default function LandingPage() {
           textAlign: 'center',
         }}
       >
-        <Container maxWidth={false} sx={{ px: 4 }}>
-          <Typography variant="body2" sx={{ opacity: 0.7 }}>
+        <Container maxWidth={false} sx={{ px: { xs: 3, md: 4 } }}>
+          <Typography variant="body2" sx={{ opacity: 0.7, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
             © 2026 EventGuard. All rights reserved. | Secure. Smart. Reliable.
           </Typography>
         </Container>

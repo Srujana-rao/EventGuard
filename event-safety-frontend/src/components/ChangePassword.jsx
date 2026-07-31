@@ -81,6 +81,7 @@ export default function ChangePassword() {
           maxWidth: 950,
           width: '100%',
           display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
           borderRadius: 1,
           overflow: 'hidden',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
@@ -96,11 +97,11 @@ export default function ChangePassword() {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            p: 4,
-            minHeight: 480,
+            p: { xs: 3, md: 4 },
+            minHeight: { xs: 'auto', md: 480 },
           }}
         >
-          <Box sx={{ borderRadius: 3, p: 3, textAlign: 'center' }}>
+          <Box sx={{ borderRadius: 3, p: { xs: 1, md: 3 }, textAlign: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
               <Security sx={{ fontSize: 34, color: '#ffd700', mr: 1.5 }} />
               <Typography
@@ -135,11 +136,11 @@ export default function ChangePassword() {
           sx={{
             flex: 1,
             backgroundColor: 'white',
-            p: 4,
+            p: { xs: 3, md: 4 },
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            minHeight: 480,
+            minHeight: { xs: 'auto', md: 480 },
           }}
         >
           <Box sx={{ maxWidth: 380, width: '100%', mx: 'auto' }}>

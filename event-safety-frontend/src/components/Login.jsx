@@ -164,6 +164,7 @@ export default function Login({ setAuth }) {
           maxWidth: 1000,
           width: '100%',
           display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
           borderRadius: 1,
           overflow: 'hidden',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
@@ -179,11 +180,11 @@ export default function Login({ setAuth }) {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            p: 6,
-            minHeight: 600,
+            p: { xs: 4, md: 6 },
+            minHeight: { xs: 'auto', md: 600 },
           }}
         >
-          <Box sx={{ borderRadius: 3, p: 4, textAlign: 'center' }}>
+          <Box sx={{ borderRadius: 3, p: { xs: 1, md: 4 }, textAlign: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
               <Security sx={{ fontSize: 40, color: '#ffd700', mr: 2 }} />
               <Typography
@@ -218,11 +219,11 @@ export default function Login({ setAuth }) {
           sx={{
             flex: 1,
             backgroundColor: 'white',
-            p: 6,
+            p: { xs: 3, sm: 4, md: 6 },
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            minHeight: 600,
+            minHeight: { xs: 'auto', md: 600 },
           }}
         >
           <Box sx={{ maxWidth: 400, width: '100%', mx: 'auto' }}>
@@ -230,7 +231,7 @@ export default function Login({ setAuth }) {
               <Typography
                 variant="h4"
                 component="h1"
-                sx={{ fontWeight: 700, color: '#333', mb: 1 }}
+                sx={{ fontWeight: 700, color: '#333', mb: 1, fontSize: { xs: '1.6rem', md: '2.125rem' } }}
               >
                 Welcome Back!
               </Typography>
