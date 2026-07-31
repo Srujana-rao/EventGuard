@@ -205,10 +205,10 @@ export default function DashboardShell({ children, title, userRole: propUserRole
             top: 0,
             left: 0,
             right: 0,
-            height: 64,
+            height: 56,
             bgcolor: topBarBg,
             color: topBarTextColor,
-            display: { md: 'none' },
+            display: { xs: 'flex', md: 'none' },
             alignItems: 'center',
             px: 2,
             zIndex: 1400,
@@ -225,9 +225,9 @@ export default function DashboardShell({ children, title, userRole: propUserRole
             {mobileOpen ? <CloseIcon /> : <MenuIcon />}
           </IconButton>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <SecurityIcon sx={{ fontSize: 22, color: '#667eea' }} />
+            <SecurityIcon sx={{ fontSize: 20, color: '#667eea' }} />
             <Typography
-              variant="h6"
+              variant="subtitle1"
               fontWeight={700}
               noWrap
               sx={{
@@ -240,7 +240,7 @@ export default function DashboardShell({ children, title, userRole: propUserRole
               EventGuard
             </Typography>
           </Box>
-          <Box sx={{ width: 44 }} />
+          <Box sx={{ width: 40 }} />
         </Box>
       )}
 
@@ -258,28 +258,31 @@ export default function DashboardShell({ children, title, userRole: propUserRole
           <Box
             sx={{
               width: '100%',
-              height: 72,
+              minHeight: { xs: 'auto', md: 72 },
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              flexDirection: { xs: 'column', md: 'row' },
+              alignItems: { xs: 'stretch', md: 'center' },
+              justifyContent: { xs: 'flex-start', md: 'space-between' },
               bgcolor: topBarBg,
               color: topBarTextColor,
               px: { xs: 2, md: 2.5 },
+              py: { xs: 1.5, md: 0 },
               position: 'fixed',
-              top: { xs: 64, md: 0 },
+              top: { xs: 56, md: 0 },
               left: 0,
               right: 0,
               zIndex: 1350,
               boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-              <SecurityIcon sx={{ fontSize: 50, color: '#667eea' }} />
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1, flexShrink: 0 }}>
+              <SecurityIcon sx={{ fontSize: { md: 34, lg: 44 }, color: '#667eea' }} />
               <Typography
                 variant="h5"
                 sx={{
                   fontWeight: 700,
                   letterSpacing: 0.4,
+                  fontSize: { md: '1.3rem', lg: '1.5rem' },
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   backgroundClip: 'text',
                   WebkitBackgroundClip: 'text',
@@ -290,24 +293,43 @@ export default function DashboardShell({ children, title, userRole: propUserRole
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
-              <Box sx={{ textAlign: 'right' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: { xs: 'space-between', md: 'flex-end' },
+                gap: 1.5,
+                width: { xs: '100%', md: 'auto' },
+              }}
+            >
+              <Box sx={{ textAlign: { xs: 'left', md: 'right' }, minWidth: 0 }}>
                 <Typography
-                  variant="h6"
-                  sx={{ fontWeight: 600, color: '#667eea', lineHeight: 1.2 }}
+                  sx={{
+                    fontWeight: 600,
+                    color: '#667eea',
+                    lineHeight: 1.25,
+                    fontSize: { xs: '0.85rem', sm: '1rem', md: '1.1rem' },
+                  }}
                   aria-live="polite"
                 >
                   Welcome, {username} ({userRole.charAt(0).toUpperCase() + userRole.slice(1)})
                 </Typography>
                 {myTeam && (
-                  <Typography variant="body1" sx={{ color: '#667eea', display: 'block', fontWeight: 'bold' }}>
+                  <Typography
+                    sx={{
+                      color: '#667eea',
+                      fontWeight: 700,
+                      fontSize: { xs: '0.72rem', sm: '0.8rem' },
+                      display: 'block',
+                    }}
+                  >
                     Team: {myTeam.name}
                   </Typography>
                 )}
               </Box>
               <Avatar
                 src={localStorage.getItem('profileAvatar') || undefined}
-                sx={{ width: 36, height: 36, bgcolor: '#667eea' }}
+                sx={{ width: { xs: 32, md: 36 }, height: { xs: 32, md: 36 }, bgcolor: '#667eea', flexShrink: 0 }}
               >
                 {username ? username[0]?.toUpperCase() : ''}
               </Avatar>
@@ -319,13 +341,14 @@ export default function DashboardShell({ children, title, userRole: propUserRole
           sx={{
             flexGrow: 1,
             width: '100%',
-            p: 4,
+            p: { xs: 2, sm: 3, md: 4 },
             maxWidth: 1400,
             mx: 'auto',
             overflowY: 'auto',
+            overflowX: 'hidden',
             bgcolor: 'background.default',
-            mt: hideTopBar ? 0 : '72px',
-            minHeight: hideTopBar ? '100vh' : 'calc(100vh - 72px)',
+            mt: hideTopBar ? 0 : { xs: '116px', sm: '108px', md: '72px' },
+            minHeight: hideTopBar ? '100vh' : { xs: 'calc(100vh - 116px)', md: 'calc(100vh - 72px)' },
           }}
           role="main"
         >

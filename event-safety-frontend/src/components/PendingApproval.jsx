@@ -27,6 +27,7 @@ export default function PendingApproval() {
           maxWidth: 900,
           width: '100%',
           display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
           borderRadius: 2,
           overflow: 'hidden',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
@@ -40,17 +41,18 @@ export default function PendingApproval() {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            p: 5,
-            minHeight: 420,
+            p: { xs: 3, md: 5 },
+            minHeight: { xs: 'auto', md: 420 },
           }}
         >
-          <Box sx={{ maxWidth: 420 }}>
+          <Box sx={{ maxWidth: 420, mx: { xs: 'auto', md: 0 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
               <SecurityIcon sx={{ fontSize: 36, color: '#ffd700' }} />
               <Typography
                 variant="h4"
                 sx={{
                   fontWeight: 700,
+                  fontSize: { xs: '1.5rem', md: '2.125rem' },
                   background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
                   backgroundClip: 'text',
                   WebkitBackgroundClip: 'text',
@@ -70,15 +72,15 @@ export default function PendingApproval() {
           sx={{
             flex: 1,
             backgroundColor: 'white',
-            p: 6,
+            p: { xs: 3, md: 6 },
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            minHeight: 420,
+            minHeight: { xs: 'auto', md: 420 },
           }}
         >
           <Box sx={{ maxWidth: 420, width: '100%', mx: 'auto' }}>
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 700, mb: 2 }}>
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
               Waiting for Head Approval
             </Typography>
             <Typography variant="body2" sx={{ color: '#666', mb: 4 }}>
