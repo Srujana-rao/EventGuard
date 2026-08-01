@@ -9,8 +9,10 @@ import {
   Avatar,
   Badge,
   Divider,
+  IconButton,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { socket } from '../socket';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -150,175 +152,209 @@ export default function Chat() {
     setMessageText('');
   };
 
-  return (
-    <Paper elevation={4} sx={{ borderRadius: 3, overflow: 'hidden', height: 'calc(100vh - 140px)', display: 'flex' }}>
-      {/* Contact list */}
-      <Box
-        sx={{
-          width: 280,
-          flexShrink: 0,
-          borderRight: '1px solid #e5e7eb',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <Box sx={{ p: 2, borderBottom: '1px solid #e5e7eb' }}>
-          <Typography variant="h6" fontWeight={700}>
-            Chat
-          </Typography>
-        </Box>
-        <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-          {loadingContacts ? (
-            <Typography variant="body2" sx={{ p: 2, color: 'text.secondary' }}>
-              Loading contacts...
-            </Typography>
-          ) : contacts.length === 0 ? (
-            <Typography variant="body2" sx={{ p: 2, color: 'text.secondary' }}>
-              No contacts found.
-            </Typography>
-          ) : (
-            contacts.map((contact) => {
-              const unread = unreadMap[contact._id] || 0;
-              const isSelected = selectedContact?._id === contact._id;
-              return (
-                <Box
-                  key={contact._id}
-                  onClick={() => openConversation(contact)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    px: 2,
-                    py: 1.5,
-                    cursor: 'pointer',
-                    bgcolor: isSelected ? 'rgba(102,126,234,0.1)' : 'transparent',
-                    borderBottom: '1px solid #f1f5f9',
-                    '&:hover': { bgcolor: 'rgba(102,126,234,0.06)' },
-                  }}
-                >
-                  <Badge
-                    color="error"
-                    badgeContent={unread}
-                    max={99}
-                    invisible={unread === 0}
-                  >
-                    <Avatar sx={{ bgcolor: '#667eea', width: 38, height: 38 }}>
-                      {(contact.username || '?').charAt(0).toUpperCase()}
-                    </Avatar>
-                  </Badge>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" fontWeight={600} noWrap>
-                      {contact.username}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {getRoleLabel(contact.role)}
-                    </Typography>
-                  </Box>
-                </Box>
-              );
-            })
-          )}
-        </Box>
+  const handleBackToList = () => {
+    setSelectedContact(null);
+  };
+
+  const ContactList = (
+    <Box
+      sx={{
+        width: { xs: '100%', md: 280 },
+        flexShrink: 0,
+        borderRight: { xs: 'none', md: '1px solid #e5e7eb' },
+        display: { xs: selectedContact ? 'none' : 'flex', md: 'flex' },
+        flexDirection: 'column',
+        height: '100%',
+      }}
+    >
+      <Box sx={{ p: 2, borderBottom: '1px solid #e5e7eb' }}>
+        <Typography variant="h6" fontWeight={700}>
+          Chat
+        </Typography>
       </Box>
-
-      {/* Conversation thread */}
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {!selectedContact ? (
-          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              Select a contact to start chatting.
-            </Typography>
-          </Box>
+      <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+        {loadingContacts ? (
+          <Typography variant="body2" sx={{ p: 2, color: 'text.secondary' }}>
+            Loading contacts...
+          </Typography>
+        ) : contacts.length === 0 ? (
+          <Typography variant="body2" sx={{ p: 2, color: 'text.secondary' }}>
+            No contacts found.
+          </Typography>
         ) : (
-          <>
-            <Box sx={{ p: 2, borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Avatar sx={{ bgcolor: '#667eea', width: 34, height: 34 }}>
-                {(selectedContact.username || '?').charAt(0).toUpperCase()}
-              </Avatar>
-              <Box>
-                <Typography variant="body1" fontWeight={600}>
-                  {selectedContact.username}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {getRoleLabel(selectedContact.role)}
-                </Typography>
-              </Box>
-            </Box>
-
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {loadingMessages ? (
-                <Typography variant="body2" color="text.secondary">
-                  Loading messages...
-                </Typography>
-              ) : messages.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No messages yet. Say hello!
-                </Typography>
-              ) : (
-                messages.map((msg) => {
-                  const isMine = String(msg.sender) === String(currentUserId);
-                  return (
-                    <Box
-                      key={msg._id}
-                      sx={{
-                        alignSelf: isMine ? 'flex-end' : 'flex-start',
-                        maxWidth: '70%',
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          bgcolor: isMine ? '#667eea' : '#f1f5f9',
-                          color: isMine ? '#fff' : '#333',
-                          borderRadius: 2,
-                          px: 1.5,
-                          py: 1,
-                        }}
-                      >
-                        <Typography variant="body2">{msg.text}</Typography>
-                      </Box>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: 'block', mt: 0.3, textAlign: isMine ? 'right' : 'left' }}
-                      >
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </Typography>
-                    </Box>
-                  );
-                })
-              )}
-              <div ref={messagesEndRef} />
-            </Box>
-
-            <Divider />
-            <Box component="form" onSubmit={handleSend} sx={{ p: 2, display: 'flex', gap: 1 }}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Type a message..."
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                autoComplete="off"
+          contacts.map((contact) => {
+            const unread = unreadMap[contact._id] || 0;
+            const isSelected = selectedContact?._id === contact._id;
+            return (
+              <Box
+                key={contact._id}
+                onClick={() => openConversation(contact)}
                 sx={{
-    '& .MuiOutlinedInput-input': {
-      pl: 2,
-      pr: 53,
-      py: 1.25,
-    },
-  }}
-              />
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={!messageText.trim()}
-                sx={{ minWidth: 0, px: 2 }}
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  px: 2,
+                  py: 1.5,
+                  cursor: 'pointer',
+                  bgcolor: isSelected ? 'rgba(102,126,234,0.1)' : 'transparent',
+                  borderBottom: '1px solid #f1f5f9',
+                  '&:hover': { bgcolor: 'rgba(102,126,234,0.06)' },
+                }}
               >
-                <SendIcon fontSize="small" />
-              </Button>
-            </Box>
-          </>
+                <Badge
+                  color="error"
+                  badgeContent={unread}
+                  max={99}
+                  invisible={unread === 0}
+                >
+                  <Avatar sx={{ bgcolor: '#667eea', width: 38, height: 38 }}>
+                    {(contact.username || '?').charAt(0).toUpperCase()}
+                  </Avatar>
+                </Badge>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="body2" fontWeight={600} noWrap>
+                    {contact.username}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {getRoleLabel(contact.role)}
+                  </Typography>
+                </Box>
+              </Box>
+            );
+          })
         )}
       </Box>
+    </Box>
+  );
+
+  const ConversationThread = (
+    <Box
+      sx={{
+        flexGrow: 1,
+        display: { xs: selectedContact ? 'flex' : 'none', md: 'flex' },
+        flexDirection: 'column',
+        minWidth: 0,
+        width: '100%',
+      }}
+    >
+      {!selectedContact ? (
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            Select a contact to start chatting.
+          </Typography>
+        </Box>
+      ) : (
+        <>
+          <Box sx={{ p: { xs: 1.5, md: 2 }, borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <IconButton
+              onClick={handleBackToList}
+              sx={{ display: { xs: 'inline-flex', md: 'none' } }}
+              aria-label="Back to contacts"
+            >
+              <ArrowBackIcon />
+            </IconButton>
+            <Avatar sx={{ bgcolor: '#667eea', width: 34, height: 34 }}>
+              {(selectedContact.username || '?').charAt(0).toUpperCase()}
+            </Avatar>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="body1" fontWeight={600} noWrap>
+                {selectedContact.username}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {getRoleLabel(selectedContact.role)}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box sx={{ flexGrow: 1, overflowY: 'auto', p: { xs: 1.5, md: 2 }, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {loadingMessages ? (
+              <Typography variant="body2" color="text.secondary">
+                Loading messages...
+              </Typography>
+            ) : messages.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                No messages yet. Say hello!
+              </Typography>
+            ) : (
+              messages.map((msg) => {
+                const isMine = String(msg.sender) === String(currentUserId);
+                return (
+                  <Box
+                    key={msg._id}
+                    sx={{
+                      alignSelf: isMine ? 'flex-end' : 'flex-start',
+                      maxWidth: { xs: '85%', sm: '70%' },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        bgcolor: isMine ? '#667eea' : '#f1f5f9',
+                        color: isMine ? '#fff' : '#333',
+                        borderRadius: 2,
+                        px: 1.5,
+                        py: 1,
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      <Typography variant="body2">{msg.text}</Typography>
+                    </Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: 'block', mt: 0.3, textAlign: isMine ? 'right' : 'left' }}
+                    >
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Typography>
+                  </Box>
+                );
+              })
+            )}
+            <div ref={messagesEndRef} />
+          </Box>
+
+          <Divider />
+          <Box component="form" onSubmit={handleSend} sx={{ p: { xs: 1.5, md: 2 }, display: 'flex', gap: 1 }}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Type a message..."
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              autoComplete="off"
+              sx={{
+                '& .MuiOutlinedInput-input': {
+                  pl: 2,
+                  pr: 2,
+                  py: 1.25,
+                },
+              }}
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={!messageText.trim()}
+              sx={{ minWidth: 0, px: 2, flexShrink: 0 }}
+            >
+              <SendIcon fontSize="small" />
+            </Button>
+          </Box>
+        </>
+      )}
+    </Box>
+  );
+
+  return (
+    <Paper
+      elevation={4}
+      sx={{
+        borderRadius: 3,
+        overflow: 'hidden',
+        height: { xs: 'calc(100vh - 130px)', md: 'calc(100vh - 140px)' },
+        display: 'flex',
+      }}
+    >
+      {ContactList}
+      {ConversationThread}
     </Paper>
   );
 }

@@ -342,10 +342,19 @@ export default function Incidents({ userRole }) {
   });
 
   return (
-    <Paper elevation={4} sx={{ p: { xs: 2, md: 4 }, borderRadius: 3 }}>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+    <Paper elevation={4} sx={{ p: { xs: 2, sm: 3, md: 4 }, borderRadius: 3 }}>
+      <Box
+        sx={{
+          mb: 3,
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', md: 'flex-start' },
+          gap: 2,
+        }}
+      >
         <Box>
-          <Typography variant="h5" fontWeight={700} gutterBottom>
+          <Typography variant="h5" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
             Incident Management
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -356,7 +365,7 @@ export default function Incidents({ userRole }) {
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
-          <CalendarMonthIcon sx={{ color: '#667eea' }} />
+          <CalendarMonthIcon sx={{ color: '#667eea', display: { xs: 'none', sm: 'inline-flex' } }} />
           <TextField
             label="View Date"
             type="date"
@@ -364,7 +373,7 @@ export default function Incidents({ userRole }) {
             value={viewDate}
             onChange={(e) => handleViewDateChange(e.target.value)}
             InputLabelProps={{ shrink: true }}
-            sx={{ minWidth: 170 }}
+            sx={{ minWidth: { xs: '100%', sm: 170 }, flexGrow: { xs: 1, sm: 0 } }}
           />
           {hasManualOverride && (
             <Button size="small" onClick={handleResetToToday} sx={{ textTransform: 'none' }}>
