@@ -71,7 +71,7 @@ export default function StaffInfo() {
 
   const renderColumn = (title, staffList) => (
     <Box sx={{ flex: 1, minWidth: 0 }}>
-      <Typography variant="h6" fontWeight={600} gutterBottom>
+      <Typography variant="h6" fontWeight={600} gutterBottom sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
         {title}
       </Typography>
       {staffList.length === 0 ? (
@@ -107,19 +107,29 @@ export default function StaffInfo() {
   ];
 
   return (
-    <Paper elevation={4} sx={{ p: 4, borderRadius: 3 }}>
-      <Typography variant="h5" gutterBottom fontWeight={700}>
+    <Paper elevation={4} sx={{ p: { xs: 2, sm: 3, md: 4 }, borderRadius: 3 }}>
+      <Typography variant="h5" gutterBottom fontWeight={700} sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
         Staff Overview
       </Typography>
 
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, alignItems: 'center' }}>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          flexWrap: 'wrap',
+          gap: 2,
+          mb: 3,
+          alignItems: { xs: 'stretch', sm: 'center' },
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           {filterOptions.map((opt) => (
             <Button
               key={opt.value}
               size="small"
               variant={roleFilter === opt.value ? 'contained' : 'outlined'}
               onClick={() => setRoleFilter(opt.value)}
+              sx={{ flexGrow: { xs: 1, sm: 0 } }}
             >
               {opt.label}
             </Button>
@@ -137,7 +147,7 @@ export default function StaffInfo() {
               </InputAdornment>
             ),
           }}
-          sx={{ minWidth: 220 }}
+          sx={{ minWidth: { xs: '100%', sm: 220 } }}
         />
       </Box>
 
@@ -161,7 +171,7 @@ export default function StaffInfo() {
               xs: '1fr',
               md: roleFilter === 'all' ? '1fr 1fr 1fr' : '1fr',
             },
-            gap: 4,
+            gap: { xs: 3, md: 4 },
           }}
         >
           {columnsToShow.map((col) => (

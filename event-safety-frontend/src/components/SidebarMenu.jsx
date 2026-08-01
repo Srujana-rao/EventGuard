@@ -181,17 +181,24 @@ export default function SidebarMenu({
         open={mobileOpen}
         onClose={onDrawerToggle}
         ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
+        PaperProps={{
+          sx: {
             width: sidebarWidth,
             background: sidebarGradient,
+            backgroundColor: '#667eea',
             color: 'white',
+            boxSizing: 'border-box',
           },
         }}
+        sx={{ display: { xs: 'block', md: 'none' } }}
       >
-        <List sx={{ mt: 6 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, pt: 3, pb: 2 }}>
+          <SecurityIcon sx={{ fontSize: 24, color: '#ffd700' }} />
+          <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#ffd700' }}>
+            EventGuard
+          </Typography>
+        </Box>
+        <List sx={{ pt: 0 }}>
           {buttons.map(({ label, to, icon, showBadge, badgeContent, active }) => (
             <ListItem key={label} disablePadding>
               <ListItemButton
@@ -207,7 +214,7 @@ export default function SidebarMenu({
                 aria-label={`Go to ${label}`}
               >
                 <ListItemIcon sx={{ color: 'white' }}>{icon}</ListItemIcon>
-                <ListItemText primary={label} />
+                <ListItemText primary={label} sx={{ color: 'white' }} />
                 {showBadge && badgeContent > 0 && (
                   <Badge
                     badgeContent={badgeContent}
