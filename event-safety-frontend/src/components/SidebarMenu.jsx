@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Box,
@@ -26,6 +26,18 @@ import ChatIcon from '@mui/icons-material/Chat';
 const sidebarGradient = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)';
 const sidebarWidth = 220;
 
+// Neutralizes the global `li { background/border/padding/margin/radius }`
+// rule in App.css, which was a leftover from a pre-MUI version of the app
+// and was overriding every MUI ListItem (which renders as an actual <li>).
+const listItemResetSx = {
+  background: 'transparent !important',
+  border: 'none !important',
+  borderRadius: '0 !important',
+  boxShadow: 'none !important',
+  margin: '0 !important',
+  padding: '0 !important',
+};
+
 export default function SidebarMenu({
   userRole,
   approvalsPending = 0,
@@ -37,6 +49,24 @@ export default function SidebarMenu({
   onLogout,
 }) {
   const location = useLocation();
+  const listRef = useRef(null);
+
+  // Reset the mobile drawer's scroll position every time it opens, so the
+  // first nav item is never left hidden above the scrolled viewport.
+  // requestAnimationFrame ensures the List has actually mounted/painted
+  // before we try to touch its scrollTop.
+  useEffect(() => {
+    if (mobileOpen) {
+      const raf = requestAnimationFrame(() => {
+        if (listRef.current) {
+          listRef.current.scrollTop = 0;
+        }
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+    return undefined;
+  }, [mobileOpen]);
+
   const matchDashboard = location.pathname === '/dashboard';
   const matchStaffInfo = location.pathname === '/staff-info';
   const matchMeetings = location.pathname === '/meetings';
@@ -177,30 +207,33 @@ export default function SidebarMenu({
   return (
     <>
       <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={onDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        PaperProps={{
-          sx: {
-            width: sidebarWidth,
-            background: sidebarGradient,
-            backgroundColor: '#667eea',
-            color: 'white',
-            boxSizing: 'border-box',
-          },
-        }}
-        sx={{ display: { xs: 'block', md: 'none' } }}
-      >
+  variant="temporary"
+  open={mobileOpen}
+  onClose={onDrawerToggle}
+  PaperProps={{
+    sx: {
+      width: sidebarWidth,
+      background: sidebarGradient,
+      backgroundColor: '#667eea',
+      color: 'white',
+      boxSizing: 'border-box',
+      overflowY: 'auto',
+    },
+  }}
+  sx={{ display: { xs: 'block', md: 'none' }, zIndex: 1500 }}
+>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, pt: 3, pb: 2 }}>
           <SecurityIcon sx={{ fontSize: 24, color: '#ffd700' }} />
           <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#ffd700' }}>
             EventGuard
           </Typography>
         </Box>
-        <List sx={{ pt: 0 }}>
+        <List
+          ref={listRef}
+          sx={{ pt: 0, ...listItemResetSx, listStyle: 'none !important' }}
+        >
           {buttons.map(({ label, to, icon, showBadge, badgeContent, active }) => (
-            <ListItem key={label} disablePadding>
+            <ListItem key={label} disablePadding sx={listItemResetSx}>
               <ListItemButton
                 component={Link}
                 to={to}
