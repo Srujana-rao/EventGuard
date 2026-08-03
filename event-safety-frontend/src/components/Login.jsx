@@ -211,6 +211,24 @@ export default function Login({ setAuth }) {
             >
               Sign in to continue managing event security with EventGuard.
             </Typography>
+            <Typography
+  variant="body2"
+  sx={{
+    mt: 4,
+    opacity: 0.85,
+    fontSize: '0.9rem',
+    lineHeight: 1.8,
+    whiteSpace: 'nowrap',
+  }}
+>
+  <strong>Demo Accounts</strong>
+  <br />
+  <strong>Head:</strong> demohead@example.com | Demohead@1
+  <br />
+  <strong>Ground:</strong> demoground@example.com | Demoground@1
+  <br />
+  <strong>Room:</strong> demoroom@example.com | Demoroom@1
+</Typography>
           </Box>
         </Box>
 
