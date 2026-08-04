@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const SafetyIncidentSchema = new mongoose.Schema({
-  incidentId: { type: String, required: true, unique: true },
+  incidentId: { type: String, required: true }, // no longer globally unique — see compound index below
   type: { type: String, required: true },
   location: { type: String, default: '' },
   priority: { type: String, enum: ['Low', 'Medium', 'Critical'], default: 'Low' },
@@ -15,4 +15,7 @@ const SafetyIncidentSchema = new mongoose.Schema({
   resolvedAt: { type: Date, default: null },
 }, { timestamps: true });
 
-module.exports = mongoose.model('SafetyIncident', SafetyIncidentSchema);
+
+SafetyIncidentSchema.index({ incidentDate: 1, incidentId: 1 }, { unique: true });
+
+module.exports = mongoose.models.SafetyIncident || mongoose.model('SafetyIncident', SafetyIncidentSchema);
