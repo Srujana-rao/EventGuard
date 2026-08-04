@@ -664,6 +664,28 @@ app.get('/api/incident-reports/summary', auth, async (req, res) => {
     }
 });
 
+// Returns distinct incidentDate strings that still have an unresolved incident —
+// used to show a red dot on the calendar for dates needing attention.
+app.get('/api/incident-reports/unresolved-dates', auth, async (req, res) => {
+    try {
+        let filter = { status: { $ne: 'Resolved' } };
+
+        if (req.user.role !== 'head') {
+            const myTeam = await Team.findOne({ members: req.user.id });
+            if (!myTeam) {
+                return res.status(200).json([]);
+            }
+            filter.assignedTeam = myTeam._id;
+        }
+
+        const dates = await SafetyIncident.distinct('incidentDate', filter);
+        res.status(200).json(dates);
+    } catch (error) {
+        console.error('Error fetching unresolved dates:', error.message);
+        res.status(500).json({ message: 'Failed to fetch unresolved dates.' });
+    }
+});
+
 app.patch('/api/incident-reports/:id/assign', auth, async (req, res) => {
     try {
         if (req.user.role !== 'head') {

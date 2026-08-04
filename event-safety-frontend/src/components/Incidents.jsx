@@ -16,9 +16,13 @@ import {
   MenuItem,
   FormControl,
   Alert,
-  TextField,
 } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { PickersDay } from '@mui/x-date-pickers/PickersDay';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import dayjs from 'dayjs';
 import { socket } from '../socket';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -58,6 +62,35 @@ const getStatusColor = (status) => {
   }
 };
 
+// Renders a small red dot under any calendar day that still has an
+// unresolved incident, so the user can spot problem days at a glance.
+function IncidentAwareDay(props) {
+  const { unresolvedDates, day, outsideCurrentMonth, ...other } = props;
+  const dateStr = day.format('YYYY-MM-DD');
+  const hasUnresolved = !outsideCurrentMonth && unresolvedDates.includes(dateStr);
+
+  return (
+    <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+      <PickersDay {...other} day={day} outsideCurrentMonth={outsideCurrentMonth} />
+      {hasUnresolved && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 3,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            bgcolor: '#d32f2f',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+    </Box>
+  );
+}
+
 export default function Incidents({ userRole }) {
   const [incidents, setIncidents] = useState([]);
   const [teams, setTeams] = useState([]);
@@ -73,6 +106,9 @@ export default function Incidents({ userRole }) {
   const [viewDate, setViewDate] = useState(getTodayString());
   const [viewEventName, setViewEventName] = useState('');
   const [hasManualOverride, setHasManualOverride] = useState(false);
+
+  // Dates (YYYY-MM-DD strings) that still have at least one unresolved incident
+  const [unresolvedDates, setUnresolvedDates] = useState([]);
 
   const token = localStorage.getItem('token');
   const isHead = userRole === 'head';
@@ -125,6 +161,17 @@ export default function Incidents({ userRole }) {
     }
   }, [token]);
 
+  const fetchUnresolvedDates = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/incident-reports/unresolved-dates`, {
+        headers: { 'x-auth-token': token },
+      });
+      setUnresolvedDates(res.data || []);
+    } catch (err) {
+      console.error('Error fetching unresolved dates:', err);
+    }
+  }, [token]);
+
   // On mount, follow whatever the current global working date is (until the
   // user manually changes the date picker on this page)
   useEffect(() => {
@@ -141,10 +188,13 @@ export default function Incidents({ userRole }) {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchIncidents(viewDate), fetchTeams(), fetchEventNameForDate(viewDate)]).finally(() =>
-      setLoading(false)
-    );
-  }, [viewDate, fetchIncidents, fetchTeams, fetchEventNameForDate]);
+    Promise.all([
+      fetchIncidents(viewDate),
+      fetchTeams(),
+      fetchEventNameForDate(viewDate),
+      fetchUnresolvedDates(),
+    ]).finally(() => setLoading(false));
+  }, [viewDate, fetchIncidents, fetchTeams, fetchEventNameForDate, fetchUnresolvedDates]);
 
   // Keep following the global working date in real time, unless the user has
   // manually picked a different date to browse
@@ -191,9 +241,18 @@ export default function Incidents({ userRole }) {
   }, [viewDate]);
 
   useEffect(() => {
-    const handleCreated = (incident) => upsertIncident(incident);
-    const handleUpdated = (incident) => upsertIncident(incident);
-    const handleAssigned = (incident) => upsertIncident(incident);
+    const handleCreated = (incident) => {
+      upsertIncident(incident);
+      fetchUnresolvedDates();
+    };
+    const handleUpdated = (incident) => {
+      upsertIncident(incident);
+      fetchUnresolvedDates();
+    };
+    const handleAssigned = (incident) => {
+      upsertIncident(incident);
+      fetchUnresolvedDates();
+    };
 
     socket.on('incident-case-created', handleCreated);
     socket.on('incident-case-updated', handleUpdated);
@@ -204,7 +263,7 @@ export default function Incidents({ userRole }) {
       socket.off('incident-case-updated', handleUpdated);
       socket.off('incident-assigned', handleAssigned);
     };
-  }, [upsertIncident]);
+  }, [upsertIncident, fetchUnresolvedDates]);
 
   const handleAssign = async (incidentId) => {
     const teamId = selectedTeamByIncident[incidentId];
@@ -241,6 +300,7 @@ export default function Incidents({ userRole }) {
       );
       setSuccess(status === 'Resolved' ? 'Incident marked as resolved!' : 'Incident marked as In Progress!');
       await fetchIncidents(viewDate);
+      await fetchUnresolvedDates();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update incident status.');
@@ -366,15 +426,25 @@ export default function Incidents({ userRole }) {
 
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
           <CalendarMonthIcon sx={{ color: '#667eea', display: { xs: 'none', sm: 'inline-flex' } }} />
-          <TextField
-            label="View Date"
-            type="date"
-            size="small"
-            value={viewDate}
-            onChange={(e) => handleViewDateChange(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            sx={{ minWidth: { xs: '100%', sm: 170 }, flexGrow: { xs: 1, sm: 0 } }}
-          />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              label="View Date"
+              value={dayjs(viewDate)}
+              onChange={(newValue) => {
+                if (newValue && newValue.isValid()) {
+                  handleViewDateChange(newValue.format('YYYY-MM-DD'));
+                }
+              }}
+              slots={{ day: IncidentAwareDay }}
+              slotProps={{
+                day: { unresolvedDates },
+                textField: {
+                  size: 'small',
+                  sx: { minWidth: { xs: '100%', sm: 170 }, flexGrow: { xs: 1, sm: 0 } },
+                },
+              }}
+            />
+          </LocalizationProvider>
           {hasManualOverride && (
             <Button size="small" onClick={handleResetToToday} sx={{ textTransform: 'none' }}>
               Back to Current
@@ -386,6 +456,15 @@ export default function Incidents({ userRole }) {
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
         Showing incidents for: <strong>{formattedViewDate}</strong>
         {viewEventName && <> — {viewEventName}</>}
+        {unresolvedDates.length > 0 && (
+          <>
+            {' '}&nbsp;|&nbsp;
+            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#d32f2f', display: 'inline-block' }} />
+              Dates with unresolved incidents are marked on the calendar
+            </Box>
+          </>
+        )}
       </Typography>
 
       {error && (
