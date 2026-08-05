@@ -89,13 +89,16 @@ export default function Login({ setAuth }) {
   setError('');
 
   try {
-    await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
-      email: formData.email,
-      password: formData.password,
-    });
+    const res = await axios.post(
+  `${import.meta.env.VITE_API_URL}/api/auth/login`,
+  {
+    email: formData.email,
+    password: formData.password,
+  }
+);
 
-    localStorage.setItem('token', res.data.token);
-    localStorage.setItem('user', JSON.stringify(res.data.user));
+localStorage.setItem('token', res.data.token);
+localStorage.setItem('user', JSON.stringify(res.data.user));
     setAuth(true);
 
     setTimeout(() => {
