@@ -11,6 +11,8 @@ const User = require('../models/User');
 const Meeting = require('../models/Meeting');
 const passport = require('../passport');
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
 let io;
 const setIo = (serverIo) => {
   io = serverIo;
@@ -110,10 +112,13 @@ router.get('/google',
 );
 
 router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login', session: false }),
+  passport.authenticate('google', {
+    failureRedirect: `${FRONTEND_URL}/login`,
+    session: false
+}),
   (req, res) => {
     if (!req.user.isApproved) {
-      return res.redirect(`http://localhost:5173/pending-approval`);
+      return res.redirect(`${FRONTEND_URL}/pending-approval`);
     }
 
     const payload = {
@@ -123,7 +128,9 @@ router.get('/google/callback',
       }
     };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' });
-    res.redirect(`http://localhost:5173/social-success?token=${token}&username=${encodeURIComponent(req.user.username)}&role=${req.user.role}&userId=${req.user.id}`);
+    res.redirect(
+  `${FRONTEND_URL}/social-success?token=${token}&username=${encodeURIComponent(req.user.username)}&role=${req.user.role}&userId=${req.user.id}`
+);
   }
 );
 
@@ -504,7 +511,7 @@ router.post('/forgot-password', async (req, res) => {
       }
     });
 
-    const resetUrl = `http://localhost:5173/reset-password/${token}`;
+    const resetUrl = `${FRONTEND_URL}/reset-password/${token}`;
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
