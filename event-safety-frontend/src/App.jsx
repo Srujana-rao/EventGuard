@@ -31,7 +31,7 @@ function getTodayString() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
 
 function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
   const [realtimeAlerts, setRealtimeAlerts] = useState([]);
@@ -255,7 +255,9 @@ function AppContent({ isAuthenticated, userRole, username, handleSetAuth }) {
       sender: username,
       senderRole: userRole,
       timestamp: new Date().toISOString(),
-      mediaUrl: mediaUrl ? `http://localhost:5000${mediaUrl}` : null,
+      mediaUrl: mediaUrl
+  ? `${import.meta.env.VITE_API_URL}${mediaUrl}`
+  : null,
       mediaType,
       targetRole: alertTargetRole === 'all' ? null : alertTargetRole,
       priority: alertPriority,

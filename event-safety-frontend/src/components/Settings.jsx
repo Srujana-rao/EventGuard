@@ -92,7 +92,7 @@ function ProfileSection({ onProfileUpdate }) {
     const fetchMe = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/auth/me', {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
           headers: { 'x-auth-token': token },
         });
 
@@ -180,7 +180,7 @@ function ProfileSection({ onProfileUpdate }) {
         email: email.trim().toLowerCase(),
       };
 
-      const res = await axios.put('http://localhost:5000/api/auth/profile', payload, {
+      const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/auth/profile`, payload, {
         headers: { 'x-auth-token': token },
       });
 
@@ -204,7 +204,7 @@ function ProfileSection({ onProfileUpdate }) {
       if (!isHead && selectedRole !== currentRole) {
         try {
           await axios.post(
-            'http://localhost:5000/api/auth/request-role-change',
+            `${import.meta.env.VITE_API_URL}/api/auth/request-role-change`,
             { role: selectedRole },
             { headers: { 'x-auth-token': token } }
           );
@@ -466,7 +466,7 @@ function AccountSection() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete('http://localhost:5000/api/auth/delete-account', {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/auth/delete-account`, {
         headers: { 'x-auth-token': token },
       });
 

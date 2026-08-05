@@ -89,7 +89,7 @@ export default function Login({ setAuth }) {
   setError('');
 
   try {
-    const res = await axios.post('http://localhost:5000/api/auth/login', {
+    await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
       email: formData.email,
       password: formData.password,
     });
@@ -123,7 +123,7 @@ export default function Login({ setAuth }) {
 
   // Google login placeholder — wire up to your actual OAuth flow when ready
   const handleGoogleLogin = () => {
-  window.location.href = 'http://localhost:5000/api/auth/google';
+ window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
 };
 
   // Shared styling for the rounded, icon-adorned inputs (matches reference layout)

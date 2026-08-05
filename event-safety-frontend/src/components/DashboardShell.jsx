@@ -15,7 +15,7 @@ import { socket } from '../socket';
 const topBarBg = '#ffffff';
 const topBarTextColor = '#333';
 const sidebarWidth = 220;
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
 
 export default function DashboardShell({ children, title, userRole: propUserRole, username: propUsername }) {
   const [mobileOpen, setMobileOpen] = useState(false);
