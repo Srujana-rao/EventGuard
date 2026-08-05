@@ -324,7 +324,7 @@ export default function Chat() {
               sx={{
                 '& .MuiOutlinedInput-input': {
                   pl: 2,
-                  pr: 45,
+                  pr: 53,
                   py: 1.25,
                 },
               }}
